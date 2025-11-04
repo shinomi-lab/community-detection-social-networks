@@ -1,0 +1,5 @@
+*.josn filter=lfs diff=lfs merge=lfs -text
+*.txt filter=lfs diff=lfs merge=lfs -text
+louvain/communities_json/*.json filter=lfs diff=lfs merge=lfs -text
+louvain/communities_json_matrix/*.json filter=lfs diff=lfs merge=lfs -text
+louvain/ego-Twitter/twitter.tar.gz filter=lfs diff=lfs merge=lfs -text
