@@ -915,7 +915,7 @@ func main() {
 		use_congress := true
 		// use_congress := true
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
-		adj, interedst_list, assum_list = Make_adj_interest_assum(adjFilePath, seed)
+		var adj, interest_list, assum_list = Make_adj_interest_assum(adjFilePath, seed)
 		fmt.Println("len adj", len(adj))
 		// os.Exit(0)
 		if i == 0 {
