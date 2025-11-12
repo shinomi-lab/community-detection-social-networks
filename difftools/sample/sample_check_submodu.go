@@ -901,8 +901,8 @@ func main() {
 
 		var seed int64 = int64(i)
 		// adjFilePath := "adj_jsonTwitterInteractionUCongress.txt"
-		adjFilePath := "adj_json_egoTwitter_kirinuki.txt"
-		adj, interest_list, assum_list := Make_adj_interest_assum(adjFilePath, seed)
+		adjFilePath := "community_31.txt"
+		//adj, interest_list, assum_list := Make_adj_interest_assum(adjFilePath, seed)
 		use_user := false
 		use_infl := false
 		use_kaiki := false   //コスト：予想拡散量　使ってない
@@ -911,11 +911,11 @@ func main() {
 		// num2 := 0
 
 		// adjFilePath = "Graphs/adj_json50node.txt"
-		adjFilePath = "louvain/directed_communities_txt/community_31.txt"
+		adjFilePath = "community_31.txt"
 		use_congress := true
 		// use_congress := true
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
-		adj, interest_list, assum_list = Make_adj_interest_assum(adjFilePath, seed)
+		adj, interedst_list, assum_list = Make_adj_interest_assum(adjFilePath, seed)
 		fmt.Println("len adj", len(adj))
 		// os.Exit(0)
 		if i == 0 {
