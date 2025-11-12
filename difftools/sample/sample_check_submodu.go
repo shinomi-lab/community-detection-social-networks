@@ -504,6 +504,60 @@ func cal_max_users(adj [][]int, n int) {
 	fmt.Println(max_users, max_user_nums)
 }
 
+func cal_max_users_fixed(adj [][]int, n int) {
+	if n == 0 || len(adj) != n {
+		fmt.Println("Invalid input: n or adj dimensions are incorrect.")
+		return
+	}
+
+	// ユーザーID (index) を格納するスライス
+	// 最終的にフォロワー数が多い順にソートされます
+	max_users := make([]int, n)
+	// 各ユーザーのフォロワー数を格納するスライス
+	// 最終的にフォロワー数の降順でソートされます
+	max_user_nums := make([]int, n)
+
+	// 各ユーザー (i) についてループ
+	for i := 0; i < n; i++ {
+		follower_count := 0 // user i のフォロワー数
+
+		// [修正点 1] フォロワー数を計算 (in-degree)
+		// adj[l][i] == 1 は、ユーザー l が ユーザー i をフォローしていることを意味します
+		for l := 0; l < n; l++ {
+			// adj が n x n の正方行列であると仮定
+			if len(adj[l]) == n && adj[l][i] == 1 {
+				follower_count++
+			}
+		}
+
+		// 挿入ソート: follower_count を
+		// max_user_nums の正しい位置に挿入します
+		for j := 0; j < n; j++ {
+			// ユーザー i のフォロワー数が、
+			// 現在 j 番目のユーザーのフォロワー数より多い場合
+			if max_user_nums[j] < follower_count {
+
+				// [修正点 2] 挿入ロジックを明確化
+				// ユーザー i を j 番目に挿入するため、
+				// j 番目以降の要素を
+				// 後ろに1つずつずらします (n-1 から j+1 まで)
+				for k := n - 1; k > j; k-- {
+					max_users[k] = max_users[k-1]
+					max_user_nums[k] = max_user_nums[k-1]
+				}
+
+				// j 番目に user i とそのフォロワー数を挿入
+				max_users[j] = i
+				max_user_nums[j] = follower_count
+				break // 挿入したので内側の j ループを抜ける
+			}
+		}
+	}
+
+	fmt.Println("Ranking (User ID):", max_users)
+	fmt.Println("Ranking (Follower #):", max_user_nums)
+}
+
 func sample1() {
 	var n int = 100
 	var seed int64 = 1
@@ -903,15 +957,15 @@ func main() {
 		// adjFilePath := "adj_jsonTwitterInteractionUCongress.txt"
 		adjFilePath := "community_31.txt"
 		//adj, interest_list, assum_list := Make_adj_interest_assum(adjFilePath, seed)
-		use_user := false
-		use_infl := false
+		use_user := true     //コスト：ユーザ
+		use_infl := false    //コスト：拡散量
 		use_kaiki := false   //コスト：予想拡散量　使ってない
 		use_follower := true //コスト：総フォロワー数　使ってない
 		S_f_type := 1
 		// num2 := 0
 
 		// adjFilePath = "Graphs/adj_json50node.txt"
-		adjFilePath = "community_31.txt"
+		adjFilePath = "community_33.txt"
 		use_congress := true
 		// use_congress := true
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
@@ -920,7 +974,8 @@ func main() {
 		// os.Exit(0)
 		if i == 0 {
 
-			cal_max_users(adj, 7)
+			//cal_max_users(adj, 7)
+			cal_max_users_fixed(adj, 7)
 		}
 		capacity := 302.0
 		//コスト=拡散量用
