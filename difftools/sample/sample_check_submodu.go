@@ -943,7 +943,7 @@ func sim_submod(adj [][]int, sample_size int, pop_list [2]int, interest_list [][
 }
 
 func main() {
-
+	var num_pick_users int = 7
 	for i := 0; i < 9; i++ {
 		fmt.Println()
 		fmt.Println()
@@ -965,7 +965,7 @@ func main() {
 		// num2 := 0
 
 		// adjFilePath = "Graphs/adj_json50node.txt"
-		adjFilePath = "community_33.txt"
+		adjFilePath = "community_35_adjmat.txt"
 		use_congress := true
 		// use_congress := true
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
@@ -974,8 +974,8 @@ func main() {
 		// os.Exit(0)
 		if i == 0 {
 
-			//cal_max_users(adj, 7)
-			cal_max_users_fixed(adj, 7)
+			cal_max_users(adj, num_pick_users)
+			//cal_max_users_fixed(adj, num_pick_users)
 		}
 		capacity := 302.0
 		//コスト=拡散量用
