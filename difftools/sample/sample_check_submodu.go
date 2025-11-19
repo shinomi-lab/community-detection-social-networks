@@ -955,21 +955,21 @@ func main() {
 
 		var seed int64 = int64(i)
 		// adjFilePath := "adj_jsonTwitterInteractionUCongress.txt"
-		adjFilePath := "community_31.txt"
-		//adj, interest_list, assum_list := Make_adj_interest_assum(adjFilePath, seed)
-		use_user := true     //コスト：ユーザ
-		use_infl := false    //コスト：拡散量
-		use_kaiki := false   //コスト：予想拡散量　使ってない
-		use_follower := true //コスト：総フォロワー数　使ってない
-		S_f_type := 1
+		// adjFilePath := "community_31.txt"
+		// adj, interest_list, assum_list := Make_adj_interest_assum(adjFilePath, seed)
+		// use_user := true     //コスト：ユーザ
+		// use_infl := false    //コスト：拡散量
+		// use_kaiki := false   //コスト：予想拡散量　使ってない
+		// use_follower := true //コスト：総フォロワー数　使ってない
+		// S_f_type := 1
 		// num2 := 0
 
 		// adjFilePath = "Graphs/adj_json50node.txt"
-		adjFilePath = "community_35_adjmat.txt"
+		adjFilePath := "community_35_adjmat.txt"
 		use_congress := true
 		// use_congress := true
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
-		var adj, interest_list, assum_list = Make_adj_interest_assum(adjFilePath, seed)
+		adj, interest_list, assum_list := Make_adj_interest_assum(adjFilePath, seed)
 		fmt.Println("len adj", len(adj))
 		// os.Exit(0)
 		if i == 0 {
@@ -980,14 +980,12 @@ func main() {
 		capacity := 302.0
 		//コスト=拡散量用
 
-		// os.Exit(0)
+		use_user := true      //コスト：ユーザ
+		use_infl := false     //コスト：拡散量
+		use_kaiki := false    //コスト：予想拡散量　使ってない
+		use_follower := false //コスト：総フォロワー数　使ってない
 
-		use_user = true
-		use_infl = false
-		use_kaiki = false
-		use_follower = false
-
-		S_f_type = 2
+		S_f_type := 1
 		for j := 1.0; j < 5.0; j++ {
 			if use_infl && use_congress {
 				capacity = j * 100
