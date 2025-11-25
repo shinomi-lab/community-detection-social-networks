@@ -965,7 +965,7 @@ func main() {
 		// num2 := 0
 
 		// adjFilePath = "Graphs/adj_json50node.txt"
-		adjFilePath := "community_35_adjmat.txt"
+		adjFilePath := "community_31_adjmat.txt"
 		use_congress := true
 		// use_congress := true
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
