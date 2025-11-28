@@ -965,7 +965,7 @@ func main() {
 		// num2 := 0
 
 		// adjFilePath = "Graphs/adj_json50node.txt"
-		adjFilePath := "community_35_adjmat.txt"
+		adjFilePath := "community_12_adjmat.txt"
 		use_congress := true
 		// use_congress := true
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
@@ -980,12 +980,12 @@ func main() {
 		capacity := 302.0
 		//コスト=拡散量用
 
-		use_user := true      //コスト：ユーザ
-		use_infl := false     //コスト：拡散量
+		use_user := false     //コスト：ユーザ
+		use_infl := true      //コスト：拡散量
 		use_kaiki := false    //コスト：予想拡散量　使ってない
 		use_follower := false //コスト：総フォロワー数　使ってない
 
-		S_f_type := 1
+		S_f_type := 2 //1:単独　2:複数
 		for j := 1.0; j < 5.0; j++ {
 			if use_infl && use_congress {
 				capacity = j * 100
