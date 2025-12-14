@@ -985,7 +985,7 @@ func main() {
 		use_kaiki := false    //コスト：予想拡散量　使ってない
 		use_follower := false //コスト：総フォロワー数　使ってない
 
-		S_f_type := 1 //1:単独　2:複数
+		S_f_type := 2 //1:単独　2:複数
 		for j := 1.0; j < 5.0; j++ {
 			if use_infl && use_congress {
 				capacity = j * 100
