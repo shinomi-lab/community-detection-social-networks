@@ -1,8 +1,6 @@
-[
-    {
+{
     "adjFilePath": "community_20_adjmat.txt",
     "use_user": false,
     "use_infl": true,
-    "S_f_type": 2
-    }
-]
+    "S_f_type": 1
+}
