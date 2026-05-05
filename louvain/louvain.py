@@ -7,7 +7,7 @@ import os
 import pandas as pd # データ整理と表示のためにpandasをインポートします
 import numpy as np   # NumPyを隣接行列の型変換で使用
 
-# --- 1. データのダウンロードと展開 (前回と同様) ---
+# --- 1. データのダウンロードと展開 ---
 url = "https://snap.stanford.edu/data/twitter.tar.gz"
 filename = "ego-twitter/twitter.tar.gz"
 data_file = "ego-twitter/twitter_combined.txt.gz"
