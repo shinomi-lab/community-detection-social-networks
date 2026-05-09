@@ -980,8 +980,8 @@ func main() {
 		capacity := 302.0
 		//コスト=拡散量用
 
-		use_user := true      //コスト：ユーザ
-		use_infl := false     //コスト：拡散量
+		use_user := false     //コスト：ユーザ
+		use_infl := true      //コスト：拡散量
 		use_kaiki := false    //コスト：予想拡散量　使ってない
 		use_follower := false //コスト：総フォロワー数　使ってない
 
