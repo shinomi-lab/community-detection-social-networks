@@ -1,10 +1,11 @@
 package optimization
 
 import (
+	diff "difftools/diffusion"
+	"difftools/network"
 	"encoding/csv"
 	"fmt"
 	"log"
-	diff "m/difftools/diffusion"
 	"math/rand"
 	"os"
 	"strconv"
@@ -14,9 +15,21 @@ import (
 	"sort"
 )
 
-func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, folder_path string) ([]int, [][]float64) {
+func CheckSubmod(
+	k int,
+	sample_size int,
+	// adj [][]int,
+	net network.Network,
+	SeedSet_F []int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+	folder_path string,
+	r *rand.Rand,
+) ([]int, [][]float64) {
 
-	var n int = len(adj)
+	var n int = net.N
 	var S []int = make([]int, n)
 
 	for i, f := range SeedSet_F {
@@ -76,11 +89,11 @@ func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []i
 			SetA = make([]int, n)
 			_ = copy(SetA, S)
 			// setA_list := Make_SeedSet_T_Random(SetA, sizes[j], adj)
-			setA_list := Make_SeedSet_T_Strong(SetA, sizes[j], adj, 10)
+			setA_list := Make_SeedSet_T_Strong(SetA, sizes[j], net.Adj, 10)
 			SetB = make([]int, n)
 			_ = copy(SetB, S)
 			// setB_list := Make_SeedSet_T_Random(SetB, sizes[j], adj)
-			setB_list := Make_SeedSet_T_Strong(SetB, sizes[j], adj, 10)
+			setB_list := Make_SeedSet_T_Strong(SetB, sizes[j], net.Adj, 10)
 
 			Sets[0] = setA_list
 			Sets[1] = setB_list
@@ -105,7 +118,7 @@ func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []i
 			Set_use[3] = SetAorB
 
 			for i, set := range Set_use {
-				dist := Infl_prop_exp(-1, sample_size*mont_loop, adj, set, prob_map, pop, interest_list, assum_list)
+				dist := RunInflProp(sample_size*mont_loop, net, set, prob_map, pop, interest_list, assum_list, r)
 				result[i] = dist[diff.InfoType_T]
 				//here
 			}
@@ -143,13 +156,28 @@ func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []i
 
 }
 
-func FocusLoop(loop_n int, list1 []int, list2 []int, SeedSet_F []int, seed int64, sample_size int, adj [][]int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, folder_path string) {
+func FocusLoop(
+	loop_n int,
+	list1 []int,
+	list2 []int,
+	SeedSet_F []int,
+	seed int64,
+	sample_size int,
+	// adj [][]int,
+	net network.Network,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+	folder_path string,
+) {
 
-	_ = seed
+	// _ = seed
+	r := rand.New(rand.NewSource(seed))
 
 	// now := time.Now()
 
-	n := len(adj)
+	n := net.N
 	SetA := make([]int, n)
 	_ = copy(SetA, SeedSet_F)
 
@@ -208,7 +236,7 @@ func FocusLoop(loop_n int, list1 []int, list2 []int, SeedSet_F []int, seed int64
 		}
 
 		for i, set := range Set_use {
-			dist := Infl_prop_exp(-1, sample_size, adj, set, prob_map, pop, interest_list, assum_list)
+			dist := RunInflProp(sample_size, net, set, prob_map, pop, interest_list, assum_list, r)
 			result[i] = dist[diff.InfoType_T]
 		}
 

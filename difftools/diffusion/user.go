@@ -3,55 +3,62 @@ package diffusion
 import (
 	"math"
 	"math/rand"
+
 	// "fmt"
 	// "os"
+	"sync"
 )
 
-var Interest_low int = 0
-var Interest_high int = 1
-var Interests_n int = 2
+const (
+	Interest_low  int = 0
+	Interest_high int = 1
+	Interests_n   int = 2
+)
 
-var Assum_F int = 0
-var Assum_T int = 1
-var Assums_n int = 2
+const (
+	Assum_F  int = 0
+	Assum_T  int = 1
+	Assums_n int = 2
+)
 
-func Make_interest_list(n int, seed int64) [][]int {
-	_ = seed
-	var interest_list = make([][]int, n)
-	for i := range interest_list {
-		interest_list[i] = make([]int, InfoTypes_n)
-		interest_list[i][InfoType_F] = rand.Intn(2)
-		interest_list[i][InfoType_T] = rand.Intn(2)
+func MakeInterestList(n int, r *rand.Rand) [][]int {
+	var interestList = make([][]int, n)
+	for i := range interestList {
+		interestList[i] = make([]int, InfoTypes_n)
+		interestList[i][InfoType_F] = r.Intn(2)
+		interestList[i][InfoType_T] = r.Intn(2)
 	}
-	return interest_list
+	return interestList
 }
 
-func Make_assum_list(n int, seed int64) [][]int {
-	_ = seed
-	var assum_list = make([][]int, n)
-	for i := range assum_list {
-		assum_list[i] = make([]int, InfoTypes_n)
-		assum_list[i][Pop_low] = rand.Intn(2)
-		assum_list[i][Pop_high] = rand.Intn(2)
+func MakeAssumList(n int, r *rand.Rand) [][]int {
+	var assumList = make([][]int, n)
+	for i := range assumList {
+		assumList[i] = make([]int, InfoTypes_n)
+		assumList[i][Pop_low] = r.Intn(2)
+		assumList[i][Pop_high] = r.Intn(2)
 
 	}
 
-	return assum_list
+	return assumList
 }
 
-func Make_probability() [16]float64 {
+func makeProbabilities() [16]float64 {
 	var x [16]float64
 	x[1] = 1
 
 	for i := 1; i < 17; i++ {
-		x[i-1] = math.Pow(10.0, float64(-i)/16.0)/8
+		x[i-1] = math.Pow(10.0, float64(-i)/16.0) / 8
 		// x[i-1] = math.Pow(10.0, float64(-i)/16.0)/32
 	}
 
 	return x
 }
 
-func Map_probagbility(prob [16]float64) [2][2][2][2]float64 {
+type UserProbTable [2][2][2][2]float64
+
+func initProbabilityTable() UserProbTable {
+	prob := makeProbabilities()
 
 	prob_1011 := prob[0]
 	prob_1111 := prob[1]
@@ -72,24 +79,36 @@ func Map_probagbility(prob [16]float64) [2][2][2][2]float64 {
 	prob_0010 := prob[14]
 	prob_0110 := prob[15]
 
-	var a [2][2][2][2]float64
+	var t UserProbTable
+	t[Pop_low][InfoType_F][Interest_low][Assum_F] = prob_0000
+	t[Pop_low][InfoType_F][Interest_low][Assum_T] = prob_0001
+	t[Pop_low][InfoType_F][Interest_high][Assum_F] = prob_0010
+	t[Pop_low][InfoType_F][Interest_high][Assum_T] = prob_0011
+	t[Pop_low][InfoType_T][Interest_low][Assum_F] = prob_0100
+	t[Pop_low][InfoType_T][Interest_low][Assum_T] = prob_0101
+	t[Pop_low][InfoType_T][Interest_high][Assum_F] = prob_0110
+	t[Pop_low][InfoType_T][Interest_high][Assum_T] = prob_0111
+	t[Pop_high][InfoType_F][Interest_low][Assum_F] = prob_1000
+	t[Pop_high][InfoType_F][Interest_low][Assum_T] = prob_1001
+	t[Pop_high][InfoType_F][Interest_high][Assum_F] = prob_1010
+	t[Pop_high][InfoType_F][Interest_high][Assum_T] = prob_1011
+	t[Pop_high][InfoType_T][Interest_low][Assum_F] = prob_1100
+	t[Pop_high][InfoType_T][Interest_low][Assum_T] = prob_1101
+	t[Pop_high][InfoType_T][Interest_high][Assum_F] = prob_1110
+	t[Pop_high][InfoType_T][Interest_high][Assum_T] = prob_1111
 
-	a[Pop_low][InfoType_F][Interest_low][Assum_F] = prob_0000
-	a[Pop_low][InfoType_F][Interest_low][Assum_T] = prob_0001
-	a[Pop_low][InfoType_F][Interest_high][Assum_F] = prob_0010
-	a[Pop_low][InfoType_F][Interest_high][Assum_T] = prob_0011
-	a[Pop_low][InfoType_T][Interest_low][Assum_F] = prob_0100
-	a[Pop_low][InfoType_T][Interest_low][Assum_T] = prob_0101
-	a[Pop_low][InfoType_T][Interest_high][Assum_F] = prob_0110
-	a[Pop_low][InfoType_T][Interest_high][Assum_T] = prob_0111
-	a[Pop_high][InfoType_F][Interest_low][Assum_F] = prob_1000
-	a[Pop_high][InfoType_F][Interest_low][Assum_T] = prob_1001
-	a[Pop_high][InfoType_F][Interest_high][Assum_F] = prob_1010
-	a[Pop_high][InfoType_F][Interest_high][Assum_T] = prob_1011
-	a[Pop_high][InfoType_T][Interest_low][Assum_F] = prob_1100
-	a[Pop_high][InfoType_T][Interest_low][Assum_T] = prob_1101
-	a[Pop_high][InfoType_T][Interest_high][Assum_F] = prob_1110
-	a[Pop_high][InfoType_T][Interest_high][Assum_T] = prob_1111
+	return t
+}
 
-	return a
+// 一度作ったテーブルをを再利用する
+var (
+	table UserProbTable
+	once  sync.Once
+)
+
+func GetUserProbTable() UserProbTable {
+	once.Do(func() {
+		table = initProbabilityTable()
+	})
+	return table
 }

@@ -4,8 +4,9 @@ package optimization
 
 import (
 	"bufio"
+	diff "difftools/diffusion"
+	"difftools/network"
 	"fmt"
-	diff "m/difftools/diffusion"
 	"math"
 	"math/rand"
 	"os"
@@ -13,9 +14,22 @@ import (
 	"strings"
 )
 
-func Greedy(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, ans_len int, Count_true bool, sample_size2 int) ([]int, float64, []float64) {
+func Greedy(
+	sample_size int,
+	// adj [][]int,
+	net network.Network,
+	Seed_set []int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+	ans_len int,
+	Count_true bool,
+	sample_size2 int,
+	r *rand.Rand,
+) ([]int, float64, []float64) {
 	//sample_size2はグリーディで求めた解をより詳しくやる
-	var n int = len(adj)
+	var n int = net.N // len(adj)
 	var max float64 = 0
 	var result float64
 	var index int
@@ -49,7 +63,7 @@ func Greedy(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [
 			}
 			S_test[j] = info_num
 
-			dist := Infl_prop_exp(seed, sample_size, adj, S_test, prob_map, pop, interest_list, assum_list)
+			dist := RunInflProp(sample_size, net, S_test, prob_map, pop, interest_list, assum_list, r)
 			if Count_true {
 				result = dist[diff.InfoType_T]
 			} else {
@@ -89,7 +103,24 @@ func (a ByInfl) Len() int           { return len(a) }
 func (a ByInfl) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByInfl) Less(i, j int) bool { return a[i].infl < a[j].infl }
 
-func Greedy_exp(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, ans_len int, Count_true bool, capacity float64, max_user int, OnlyInfler bool, user_weight float64, use_kaiki bool) ([]int, float64) {
+func Greedy_exp(
+	sample_size int,
+	// adj [][]int,
+	net network.Network,
+	Seed_set []int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+	ans_len int,
+	Count_true bool,
+	capacity float64,
+	max_user int,
+	OnlyInfler bool,
+	user_weight float64,
+	use_kaiki bool,
+	r *rand.Rand,
+) ([]int, float64) {
 
 	// var costcal func(float64, float64,[][]int,int,int) float64
 	// if use_kaiki{
@@ -97,7 +128,7 @@ func Greedy_exp(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_m
 	// }else{
 	// 	costcal = Cal_cost
 	// }
-	var n int = len(adj)
+	var n int = net.N // len(adj)
 	var max float64 = 0
 	var result float64
 	var index int
@@ -131,19 +162,20 @@ func Greedy_exp(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_m
 				continue
 			}
 			if OnlyInfler {
-				if FolowerSize(adj, j) == 0 {
+				// if FolowerSize(adj, j) == 0 {
+				if net.Followers[j] == 0 {
 					continue
 				}
 			}
 
 			// cost := costcal(user_weight, 1-user_weight, adj, j, max_user)
-			cost := Cal_cost_infl(adj, j, prob_map, pop, interest_list, assum_list)
+			cost := cal_cost_infl(net, j, prob_map, pop, interest_list, assum_list)
 			if cost > cap_use { //コストが大きすぎるユーザなら
 				continue
 			}
 			S_test[j] = info_num
-			rand.Seed(100) //おそらく後で消す　重要
-			dist := Infl_prop_exp(seed, sample_size, adj, S_test, prob_map, pop, interest_list, assum_list)
+			// rand.Seed(100) //おそらく後で消す　重要
+			dist := RunInflProp(sample_size, net, S_test, prob_map, pop, interest_list, assum_list, r)
 			if Count_true {
 				result = (dist[diff.InfoType_T] - pre_infl) / cost
 			} else {
@@ -161,7 +193,7 @@ func Greedy_exp(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_m
 			break
 		}
 		ans = append(ans, index)
-		cap_use -= Cal_cost_infl(adj, index, prob_map, pop, interest_list, assum_list)
+		cap_use -= cal_cost_infl(net, index, prob_map, pop, interest_list, assum_list)
 		// cap_use -= costcal(user_weight,1-user_weight,adj,index,max_user)
 
 		S[index] = info_num
@@ -169,15 +201,23 @@ func Greedy_exp(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_m
 	return ans, max
 }
 
-func Cal_cost(u_weight float64, f_wight float64, adj [][]int, node int, max_user int) float64 {
-	f := FolowerSize(adj, node)
+func Cal_cost(
+	u_weight float64,
+	f_wight float64,
+	// adj [][]int,
+	net network.Network,
+	node int,
+	max_user int,
+) float64 {
+	// f := FolowerSize(adj, node)
+	f := net.Followers[node]
 	if f == 0 {
 		f = 10000000000000
 	}
-	u_max := len(adj)
+	u_max := net.N // len(adj)
 	f_max := 0
 	for i := 0; i < u_max; i++ {
-		if adj[max_user][i] == 1 {
+		if net.Adj[max_user][i] == 1 {
 			f_max++
 		}
 	}
@@ -186,9 +226,17 @@ func Cal_cost(u_weight float64, f_wight float64, adj [][]int, node int, max_user
 	return float64(f)*f_wight/float64(f_max) + u_weight/2
 }
 
-func Cal_cost_kaiki(u_weight float64, f_wight float64, adj [][]int, node int, max_user int) float64 {
+func Cal_cost_kaiki(
+	u_weight float64,
+	f_wight float64,
+	// adj [][]int,
+	net network.Network,
+	node int,
+	max_user int,
+) float64 {
 	// return 100.0
-	f := FolowerSize(adj, node)
+	// f := FolowerSize(adj, node)
+	f := net.Followers[node]
 	if f == 0 {
 		f = 10000000000000
 	}
@@ -233,9 +281,17 @@ func Cal_cost_kaiki(u_weight float64, f_wight float64, adj [][]int, node int, ma
 	return math.Log(float64(f))*slope + intercept
 }
 
-func Cal_cost_kaiki_int(u_weight float64, f_wight float64, adj [][]int, node int, max_user int) int {
+func Cal_cost_kaiki_int(
+	u_weight float64,
+	f_wight float64,
+	// adj [][]int,
+	net network.Network,
+	node int,
+	max_user int,
+) int {
 	// return 100.0
-	f := FolowerSize(adj, node)
+	// f := FolowerSize(adj, node)
+	f := net.Followers[node]
 	if f == 0 {
 		f = 10000000000000
 	}
@@ -280,39 +336,81 @@ func Cal_cost_kaiki_int(u_weight float64, f_wight float64, adj [][]int, node int
 	return int(math.Round(math.Log(float64(f))*slope + intercept))
 }
 
-func Cal_cost_infl(adj [][]int, node int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) float64 {
+func cal_cost_infl(
+	// adj [][]int,
+	net network.Network,
+	node int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+) float64 {
 
-	S_test := make([]int, len(adj))
-	S_test[node] = 2
-	rand.Seed(100)
-	dist := Infl_prop_exp(100, 1000, adj, S_test, prob_map, pop, interest_list, assum_list)
+	S_test := make([]int, net.N)
+	// S_test[node] = 2
+	S_test[node] = diff.SeedInfoT
+	r := rand.New(rand.NewSource((100))) // [todo]
+	dist := RunInflProp(1000, net, S_test, prob_map, pop, interest_list, assum_list, r)
 
 	return dist[diff.InfoType_T]
 }
 
-func Cal_cost_infl_int(adj [][]int, node int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) int {
-
-	S_test := make([]int, len(adj))
-	S_test[node] = 2
-	rand.Seed(100)
-	dist := Infl_prop_exp(100, 1000, adj, S_test, prob_map, pop, interest_list, assum_list)
-
-	return int(math.Round(dist[diff.InfoType_T]))
+func Cal_cost_infl_int(
+	// adj [][]int,
+	net network.Network,
+	node int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+) int {
+	cost := cal_cost_infl(net, node, prob_map, pop, interest_list, assum_list)
+	return int(math.Round(cost))
 }
 
-func Cal_cost_user(u_weight float64, f_wight float64, adj [][]int, node int, max_user int) float64 {
+func Cal_cost_user(
+	// u_weight float64, f_wight float64, adj [][]int, node int, max_user int,
+	u_weight float64,
+	f_wight float64,
+	net network.Network,
+	node int,
+	max_user int,
+) float64 {
 	return 1.0
 }
 
-func Cal_cost_user_int(u_weight float64, f_wight float64, adj [][]int, node int, max_user int) int {
+func Cal_cost_user_int(
+	// u_weight float64, f_wight float64, adj [][]int, node int, max_user int,
+	u_weight float64,
+	f_wight float64,
+	net network.Network,
+	node int,
+	max_user int,
+) int {
 	return 1
 }
-func Cal_cost_follower(u_weight float64, f_wight float64, adj [][]int, node int, max_user int) float64 {
-	return float64(FolowerSize(adj, node))
+func Cal_cost_follower(
+	// u_weight float64, f_wight float64, adj [][]int, node int, max_user int,
+	u_weight float64,
+	f_wight float64,
+	net network.Network,
+	node int,
+	max_user int,
+) float64 {
+	// return float64(FolowerSize(adj, node))
+	return float64(net.Followers[node])
 }
 
-func Cal_cost_follower_int(u_weight float64, f_wight float64, adj [][]int, node int, max_user int) int {
-	return FolowerSize(adj, node)
+func Cal_cost_follower_int(
+	// u_weight float64, f_wight float64, adj [][]int, node int, max_user int,
+	u_weight float64,
+	f_wight float64,
+	net network.Network,
+	node int,
+	max_user int,
+) int {
+	// return FolowerSize(adj, node)
+	return net.Followers[node]
 }
 
 // 付録Cはここから
@@ -330,7 +428,29 @@ func (ui *Users_infl) CopyUsers(users []int) {
 	copy(ui.Users, users)
 }
 
-func DP(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, ans_len int, Count_true bool, capacity float64, max_user int, OnlyInfler bool, user_weight float64, use_kaiki bool, use_follower bool, nick int, non_use_list []int, use_user bool, use_infl bool) ([]int, float64) {
+func DP(
+	sampleSize int,
+	// adj [][]int,
+	net network.Network,
+	seedSet []int,
+	probMap diff.UserProbTable,
+	pop [2]int,
+	interestList [][]int,
+	assumList [][]int,
+	ansLen int,
+	countTrue bool,
+	capacity float64,
+	maxUser int,
+	onlyInfler bool,
+	userWeight float64,
+	useKaiki bool,
+	useFollower bool,
+	nick int,
+	nonUseList []int,
+	useUser bool,
+	useInfl bool,
+	r *rand.Rand,
+) ([]int, float64) {
 
 	//count_ture: 新情報を扱うかどうか
 	//nick: 刻み幅，大きいほど計算時間が短く精度が悪くなる
@@ -342,25 +462,25 @@ func DP(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2
 	var cost_i_int int
 	use_int_cost := false
 
-	if Count_true {
+	if countTrue {
 		info_num = 2
 	} else {
 		info_num = 1
 	}
 
-	var costcal func(float64, float64, [][]int, int, int) float64
-	var costcal_int func(float64, float64, [][]int, int, int) int
+	var costcal func(float64, float64, network.Network, int, int) float64
+	var costcal_int func(float64, float64, network.Network, int, int) int
 
 	//制約関数の設定
-	if use_kaiki {
+	if useKaiki {
 		use_int_cost = true
 		costcal = Cal_cost_kaiki
 		costcal_int = Cal_cost_kaiki_int
-	} else if use_user {
+	} else if useUser {
 		use_int_cost = true
 		costcal = Cal_cost_user
 		costcal_int = Cal_cost_user_int
-	} else if use_follower {
+	} else if useFollower {
 		use_int_cost = true
 		costcal = Cal_cost_follower
 		costcal_int = Cal_cost_follower_int
@@ -369,10 +489,10 @@ func DP(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2
 		costcal = Cal_cost
 	}
 
-	S := make([]int, len(Seed_set))
-	_ = copy(S, Seed_set)
+	S := make([]int, len(seedSet))
+	_ = copy(S, seedSet)
 
-	onlyiflerlist := OnlyInflerlist(adj, non_use_list)
+	onlyiflerlist := OnlyInflerlist(net, nonUseList)
 	onlyinfler_num := len(onlyiflerlist)
 	// fmt.Println("aaa",onlyiflerlist)
 	// fmt.Println("onlyinfler_num",onlyinfler_num)
@@ -397,17 +517,17 @@ func DP(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2
 	for i := 0; i < n; i++ {
 		focus_user := onlyiflerlist[i]
 		if !use_int_cost { //cost_inflだけ引数の数が違うため別処理
-			if use_infl {
-				cost_i = Cal_cost_infl(adj, focus_user, prob_map, pop, interest_list, assum_list)
+			if useInfl {
+				cost_i = cal_cost_infl(net, focus_user, probMap, pop, interestList, assumList)
 			} else {
-				cost_i = costcal(user_weight, 1-user_weight, adj, focus_user, max_user)
+				cost_i = costcal(userWeight, 1-userWeight, net, focus_user, maxUser)
 			}
 			cost_i_int = int(cost_i)
 		} else {
-			if use_infl {
-				cost_i_int = Cal_cost_infl_int(adj, focus_user, prob_map, pop, interest_list, assum_list)
+			if useInfl {
+				cost_i_int = Cal_cost_infl_int(net, focus_user, probMap, pop, interestList, assumList)
 			} else {
-				cost_i_int = costcal_int(user_weight, 1-user_weight, adj, focus_user, max_user)
+				cost_i_int = costcal_int(userWeight, 1-userWeight, net, focus_user, maxUser)
 			}
 		}
 		for j := 0; j < l_list; j++ {
@@ -419,15 +539,15 @@ func DP(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2
 				dp[i+1][j].CopyUsers(dp[i][j].Users)
 				continue
 			}
-			_ = copy(S, Seed_set) //初期化
+			_ = copy(S, seedSet) //初期化
 			last_cost := j - cost_i_int/nick
 			for k := 0; k < len(dp[i][last_cost].Users); k++ {
 				S[dp[i][last_cost].Users[k]] = info_num
 			}
 			S[focus_user] = info_num
-			rand.Seed(100) //おそらく後で消す　重要
-			dist := Infl_prop_exp(seed, sample_size, adj, S, prob_map, pop, interest_list, assum_list)
-			if Count_true {
+			// rand.Seed(100) //おそらく後で消す　重要
+			dist := RunInflProp(sampleSize, net, S, probMap, pop, interestList, assumList, r)
+			if countTrue {
 				result = dist[diff.InfoType_T]
 			} else {
 				result = dist[diff.InfoType_F]
@@ -456,12 +576,16 @@ func PrintDp(dp [][]Users_infl) {
 	}
 }
 
-func OnlyInflerlist(adj [][]int, non_use_list []int) []int {
-	n := len(adj)
-	ans := make([]int, 0, n)
+func OnlyInflerlist(
+	// adj [][]int,
+	net network.Network,
+	non_use_list []int) []int {
+	// n := len(adj)
+	ans := make([]int, 0, net.N)
 
-	for i := 0; i < n; i++ {
-		if FolowerSize(adj, i) != 0 {
+	for i := 0; i < net.N; i++ {
+		// if FolowerSize(adj, i) != 0 {
+		if net.Followers[i] != 0 {
 			if !IsInList(i, non_use_list) {
 				ans = append(ans, i)
 			}

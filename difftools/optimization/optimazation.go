@@ -3,21 +3,34 @@ package optimization
 // diffuse.goを使ってモンテカルロ法で影響関数を求めている
 
 import (
-	diff "m/difftools/diffusion"
+	diff "difftools/diffusion"
+	"difftools/network"
+	"math/rand"
 )
 
-func Infl_prop_exp(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) []float64 {
-	// return value is result of mont (配列で影響関数の答えがinfoごとにある)
+// 乱数シード値の代わりに乱数生成器`r`を渡す
+//
+// return: result of mont (配列で影響関数の答えがinfoごとにある)
+func RunInflProp(
+	sampleSize int,
+	net network.Network,
+	// adj [][]int,
+	seedSet []int,
+	userProbTable diff.UserProbTable,
+	pop [2]int,
+	interestList [][]int,
+	assumList [][]int,
+	r *rand.Rand,
+) []float64 {
 	// n := len(adj)
 
-	_ = seed
-	dist := make([][]int, diff.InfoTypes_n)
+	// dist := make([][]int, diff.InfoTypes_n)
 	ans := make([]float64, diff.InfoTypes_n)
 
-	for i := 0; i < sample_size; i++ {
-		dist = diff.Adjmat(adj, Seed_set, -1, prob_map, pop, interest_list, assum_list) //-1 is correct?
-		ans[diff.InfoType_F] += float64(len(dist[diff.InfoType_F])) / float64(sample_size)
-		ans[diff.InfoType_T] += float64(len(dist[diff.InfoType_T])) / float64(sample_size)
+	for i := 0; i < sampleSize; i++ {
+		var dist = diff.Diffuse(net, seedSet, userProbTable, pop, interestList, assumList, r) //-1 is correct?
+		ans[diff.InfoType_F] += float64(len(dist[diff.InfoType_F])) / float64(sampleSize)
+		ans[diff.InfoType_T] += float64(len(dist[diff.InfoType_T])) / float64(sampleSize)
 	}
 	return ans
 }

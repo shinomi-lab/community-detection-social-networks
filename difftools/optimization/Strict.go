@@ -1,17 +1,32 @@
 package optimization
 
 import (
+	diff "difftools/diffusion"
+	"difftools/network"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	diff "m/difftools/diffusion"
 	"math/rand"
 	"sort"
 	// "os"
 )
 
-func Strict(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, ans_len int, Count_true bool, sample_size2 int) ([]int, float64, float64) {
-	var n int = len(diff.Set)
+func Strict(
+	sample_size int,
+	// adj [][]int,
+	net network.Network,
+	Seed_set []int,
+	CandidateSet []int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+	ans_len int,
+	Count_true bool,
+	sample_size2 int,
+	r *rand.Rand,
+) ([]int, float64, float64) {
+	var n int = len(CandidateSet)
 	var max float64 = 0
 	var result float64
 	var ans []int
@@ -31,25 +46,25 @@ func Strict(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [
 	}
 
 	for i := 0; i < n; i++ {
-		if S_test[diff.Set[i]] != 0 { //すでに発信源のユーザだったら
+		if S_test[CandidateSet[i]] != 0 { //すでに発信源のユーザだったら
 			continue
 		}
 		for j := i; j < n; j++ {
-			if S_test[diff.Set[j]] != 0 { //すでに発信源のユーザだったら
+			if S_test[CandidateSet[j]] != 0 { //すでに発信源のユーザだったら
 				continue
 			}
 			for k := j; k < n; k++ {
-				if S_test[diff.Set[k]] != 0 { //すでに発信源のユーザだったら
+				if S_test[CandidateSet[k]] != 0 { //すでに発信源のユーザだったら
 					continue
 				}
 				//main loop
 				_ = copy(S_test, S)
-				S_test[diff.Set[i]] = info_num
-				S_test[diff.Set[j]] = info_num
-				S_test[diff.Set[k]] = info_num
+				S_test[CandidateSet[i]] = info_num
+				S_test[CandidateSet[j]] = info_num
+				S_test[CandidateSet[k]] = info_num
 				//complete set Seedsets
 
-				dist := Infl_prop_exp(seed, sample_size, adj, S_test, prob_map, pop, interest_list, assum_list)
+				dist := RunInflProp(sample_size, net, S_test, prob_map, pop, interest_list, assum_list, r)
 				if Count_true {
 					result = dist[diff.InfoType_T]
 				} else {
@@ -57,7 +72,7 @@ func Strict(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [
 				}
 				if result > max {
 					max = result
-					ans = []int{diff.Set[i], diff.Set[j], diff.Set[k]} //いける？
+					ans = []int{CandidateSet[i], CandidateSet[j], CandidateSet[k]} //いける？
 				}
 
 			}
@@ -71,7 +86,7 @@ func Strict(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [
 	//complete set Seedsets
 
 	var max2 float64
-	dist2 := Infl_prop_exp(seed, sample_size2, adj, S_test, prob_map, pop, interest_list, assum_list)
+	dist2 := RunInflProp(sample_size2, net, S_test, prob_map, pop, interest_list, assum_list, r)
 	if Count_true {
 		max2 = dist2[diff.InfoType_T]
 	} else {
@@ -81,8 +96,23 @@ func Strict(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [
 	return ans, max, max2
 }
 
-func Strict2(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, ans_len int, Count_true bool, sample_size2 int, under int, upper int) ([]int, float64, float64) {
-	var n int = len(diff.Set)
+func Strict2(
+	sample_size int,
+	net network.Network,
+	Seed_set []int,
+	CandidateSet []int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int,
+	assum_list [][]int,
+	ans_len int,
+	Count_true bool,
+	sample_size2 int,
+	under int,
+	upper int,
+	r *rand.Rand,
+) ([]int, float64, float64) {
+	var n int = len(CandidateSet)
 	var max float64 = 0
 	var result float64
 	var ans []int
@@ -102,25 +132,25 @@ func Strict2(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map 
 	}
 
 	for i := 0; i < n; i++ {
-		if S_test[diff.Set[i]] != 0 { //すでに発信源のユーザだったら
+		if S_test[CandidateSet[i]] != 0 { //すでに発信源のユーザだったら
 			continue
 		}
 		for j := i; j < n; j++ {
-			if S_test[diff.Set[j]] != 0 { //すでに発信源のユーザだったら
+			if S_test[CandidateSet[j]] != 0 { //すでに発信源のユーザだったら
 				continue
 			}
 			for k := j; k < n; k++ {
-				if S_test[diff.Set[k]] != 0 { //すでに発信源のユーザだったら
+				if S_test[CandidateSet[k]] != 0 { //すでに発信源のユーザだったら
 					continue
 				}
 				//main loop
 				_ = copy(S_test, S)
-				S_test[diff.Set[i]] = info_num
-				S_test[diff.Set[j]] = info_num
-				S_test[diff.Set[k]] = info_num
+				S_test[CandidateSet[i]] = info_num
+				S_test[CandidateSet[j]] = info_num
+				S_test[CandidateSet[k]] = info_num
 				//complete set Seedsets
 
-				dist := Infl_prop_exp(seed, sample_size, adj, S_test, prob_map, pop, interest_list, assum_list)
+				dist := RunInflProp(sample_size, net, S_test, prob_map, pop, interest_list, assum_list, r)
 				if Count_true {
 					result = dist[diff.InfoType_T]
 				} else {
@@ -128,7 +158,11 @@ func Strict2(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map 
 				}
 				if result > max {
 					max = result
-					ans = []int{diff.Set[i], diff.Set[j], diff.Set[k]} //いける？
+					ans = []int{
+						CandidateSet[i],
+						CandidateSet[j],
+						CandidateSet[k],
+					} //いける？
 				}
 
 			}
@@ -142,7 +176,7 @@ func Strict2(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map 
 	//complete set Seedsets
 
 	var max2 float64
-	dist2 := Infl_prop_exp(seed, sample_size2, adj, S_test, prob_map, pop, interest_list, assum_list)
+	dist2 := RunInflProp(sample_size2, net, S_test, prob_map, pop, interest_list, assum_list, r)
 	if Count_true {
 		max2 = dist2[diff.InfoType_T]
 	} else {
@@ -158,7 +192,7 @@ var saiki int
 var ketteizumi int
 var counter int
 var infler_cost_list_copy []int
-var prob_map_copy [2][2][2][2]float64
+var prob_map_copy diff.UserProbTable
 var pop_copy [2]int
 var interest_list_copy [][]int
 var assum_list_copy [][]int
@@ -176,8 +210,10 @@ func printCombination(pattern []int, elems []int, n int) {
 }
 
 /* n個の要素からr個の要素を選ぶ場合の全パターンを列挙する */
-func combination(adj [][]int, pattern []int, elems []int, n int, undder int, upper int, num_decided int, OnlyInfler bool, use_cost_infl bool) {
-	var use_get_num_selected func([][]int, []int, int, []int) int
+func combination(
+	net network.Network,
+	pattern []int, elems []int, n int, undder int, upper int, num_decided int, OnlyInfler bool, use_cost_infl bool) {
+	var use_get_num_selected func(network.Network, []int, int, []int) int
 
 	if use_cost_infl {
 		use_get_num_selected = getNumSelected_infl
@@ -185,7 +221,7 @@ func combination(adj [][]int, pattern []int, elems []int, n int, undder int, upp
 		use_get_num_selected = getNumSelected
 	}
 	// fmt.Println("num_decided:",num_decided)
-	num_selected := use_get_num_selected(adj, pattern, num_decided, elems)
+	num_selected := use_get_num_selected(net, pattern, num_decided, elems)
 
 	// if(num_decided != counter){
 	//   counter = num_decided
@@ -208,19 +244,20 @@ func combination(adj [][]int, pattern []int, elems []int, n int, undder int, upp
 
 	/* num_decided個目の要素を"選ばない"場合のパターンを作成 */
 	pattern[num_decided] = 0
-	combination(adj, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, use_cost_infl)
+	combination(net, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, use_cost_infl)
 	if num_selected <= upper {
 		/* num_decided個目の要素を"選ぶ"場合のパターンを作成 */
 		if OnlyInfler {
-			if FolowerSize(adj, num_decided) != 0 {
+			// if FolowerSize(net.Adj, num_decided) != 0 {
+			if net.Followers[num_decided] != 0 {
 				pattern[num_decided] = 1
-				combination(adj, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, use_cost_infl)
+				combination(net, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, use_cost_infl)
 			} else {
 				// fmt.Println("除外している")
 			}
 		} else {
 			pattern[num_decided] = 1
-			combination(adj, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, use_cost_infl)
+			combination(net, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, use_cost_infl)
 
 		}
 
@@ -230,9 +267,12 @@ func combination(adj [][]int, pattern []int, elems []int, n int, undder int, upp
 }
 
 /* n個の要素からr個の要素を選ぶ場合の全パターンを列挙する */
-func combination2(adj [][]int, pattern []int, elems []int, n int, undder float64, upper float64, num_decided int, OnlyInfler bool, max_user int, user_weight float64) {
+func combination2(
+	// adj [][]int,
+	net network.Network,
+	pattern []int, elems []int, n int, undder float64, upper float64, num_decided int, OnlyInfler bool, max_user int, user_weight float64) {
 
-	num_selected := getNumSelected2(adj, pattern, num_decided, elems, max_user, user_weight)
+	num_selected := getNumSelected2(net, pattern, num_decided, elems, max_user, user_weight)
 
 	if num_decided == n {
 		/* n個全ての要素に対して"選ぶ"or"選ばない"が決定ずみ */
@@ -245,24 +285,29 @@ func combination2(adj [][]int, pattern []int, elems []int, n int, undder float64
 
 	/* num_decided個目の要素を"選ばない"場合のパターンを作成 */
 	pattern[num_decided] = 0
-	combination2(adj, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, max_user, user_weight)
+	combination2(net, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, max_user, user_weight)
 
 	/* num_decided個目の要素を"選ぶ"場合のパターンを作成 */
 	if OnlyInfler {
-		if FolowerSize(adj, num_decided) != 0 {
+		// if FolowerSize(adj, num_decided) != 0 {
+		if net.Followers[num_decided] != 0 {
 			pattern[num_decided] = 1
-			combination2(adj, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, max_user, user_weight)
+			combination2(net, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, max_user, user_weight)
 		}
 	} else {
 		pattern[num_decided] = 1
-		combination2(adj, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, max_user, user_weight)
+		combination2(net, pattern, elems, n, undder, upper, num_decided+1, OnlyInfler, max_user, user_weight)
 
 	}
 }
 
-func SameImporession(adj [][]int, pattern []int, elems []int, n int, undder int, upper int, num_decided int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) {
-
-	num_selected := getNumSelected_SameImpression(adj, pattern, num_decided, elems, SeedSet, prob_map, pop, interest_list, assum_list)
+func sameImporession(
+	// adj [][]int,
+	net network.Network,
+	pattern []int, elems []int, n int, undder int, upper int, num_decided int, SeedSet []int, prob_map diff.UserProbTable, pop [2]int, interest_list [][]int, assum_list [][]int) {
+	r := rand.New(rand.NewSource(0))
+	num_selected := getNumSelectedSameImpression(
+		net, pattern, num_decided, elems, SeedSet, prob_map, pop, interest_list, assum_list, r)
 
 	if num_decided == n {
 		/* n個全ての要素に対して"選ぶ"or"選ばない"が決定ずみ */
@@ -275,54 +320,64 @@ func SameImporession(adj [][]int, pattern []int, elems []int, n int, undder int,
 
 	/* num_decided個目の要素を"選ばない"場合のパターンを作成 */
 	pattern[num_decided] = 0
-	SameImporession(adj, pattern, elems, n, undder, upper, num_decided+1, SeedSet, prob_map, pop, interest_list, assum_list)
+	sameImporession(net, pattern, elems, n, undder, upper, num_decided+1, SeedSet, prob_map, pop, interest_list, assum_list)
 
 	/* num_decided個目の要素を"選ぶ"場合のパターンを作成 */
 	infler_num := 0
-	for i := 0; i < len(adj); i++ {
-		if adj[num_decided][i] != 0 {
+	for i := 0; i < net.N; i++ {
+		if net.Adj[num_decided][i] != 0 {
 			infler_num = 1
 			break
 		}
 	}
 	if infler_num != 0 {
 		pattern[num_decided] = 1
-		SameImporession(adj, pattern, elems, n, undder, upper, num_decided+1, SeedSet, prob_map, pop, interest_list, assum_list)
+		sameImporession(net, pattern, elems, n, undder, upper, num_decided+1, SeedSet, prob_map, pop, interest_list, assum_list)
 
 	}
 }
 
-func getNumSelected(adj [][]int, pattern []int, n int, elems []int) int {
+func getNumSelected(
+	// adj [][]int,
+	net network.Network,
+	pattern []int, n int, elems []int) int {
 	/* "選ぶ"と決定された要素の数を計算 */
 	// printf("pattern\t");
 	num_selected := 0
 	for i := 0; i < n; i++ {
 		if pattern[i] == 1 {
-			num_selected += FolowerSize(adj, elems[i])
+			// num_selected += FolowerSize(adj, elems[i])
+			num_selected += net.Followers[elems[i]]
 		}
 	}
 	return num_selected
 }
 
-func getNumSelected_infl(adj [][]int, pattern []int, n int, elems []int) int {
+func getNumSelected_infl(
+	// adj [][]int,
+	net network.Network,
+	pattern []int, n int, elems []int) int {
 	/* "選ぶ"と決定された要素の数を計算 */
 	// printf("pattern\t");
 	num_selected := 0
 	for i := 0; i < n; i++ {
 		if pattern[i] == 1 {
-			num_selected += Cal_cost_infl_int(adj, elems[i], prob_map_copy, pop_copy, interest_list_copy, assum_list_copy)
+			num_selected += Cal_cost_infl_int(net, elems[i], prob_map_copy, pop_copy, interest_list_copy, assum_list_copy)
 		}
 	}
 	return num_selected
 }
 
-func getNumSelected2(adj [][]int, pattern []int, n int, elems []int, max_user int, user_weight float64) float64 {
+func getNumSelected2(
+	// adj [][]int,
+	net network.Network,
+	pattern []int, n int, elems []int, max_user int, user_weight float64) float64 {
 	/* "選ぶ"と決定された要素の数を計算 nownow*/
 	// printf("pattern\t");
 	num_selected := 0.0
 	for i := 0; i < n; i++ {
 		if pattern[i] == 1 {
-			num_selected += Cal_cost(user_weight, 1-user_weight, adj, elems[i], max_user)
+			num_selected += Cal_cost(user_weight, 1-user_weight, net, elems[i], max_user)
 		}
 	}
 	// fmt.Println("pattern:",pattern,"elems:",elems)
@@ -330,7 +385,12 @@ func getNumSelected2(adj [][]int, pattern []int, n int, elems []int, max_user in
 	return num_selected
 }
 
-func getNumSelected_SameImpression(adj [][]int, pattern []int, n int, elems []int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) float64 {
+func getNumSelectedSameImpression(
+	// adj [][]int,
+	net network.Network,
+	pattern []int, n int, elems []int, SeedSet []int, prob_map diff.UserProbTable, pop [2]int, interest_list [][]int, assum_list [][]int,
+	r *rand.Rand,
+) float64 {
 	/* "選ぶ"と決定された要素の数を計算 */
 	// printf("pattern\t");
 
@@ -343,23 +403,23 @@ func getNumSelected_SameImpression(adj [][]int, pattern []int, n int, elems []in
 		}
 	}
 
-	dist2 := Infl_prop_exp(0, 100, adj, S_test, prob_map, pop, interest_list, assum_list) //後で直す
+	dist2 := RunInflProp(100, net, S_test, prob_map, pop, interest_list, assum_list, r) //後で直す
 
 	ans := dist2[diff.InfoType_T]
 
 	return ans
 }
 
-func FolowerSize(adj [][]int, node int) int {
-	ans := 0
-	for _, isEdge := range adj[node] {
-		ans += isEdge
-	}
+// func FolowerSize(adj [][]int, node int) int {
+// 	ans := 0
+// 	for _, isEdge := range adj[node] {
+// 		ans += isEdge
+// 	}
 
-	return ans
-}
+// 	return ans
+// }
 
-// func ImpressionSize(adj [][]int,node int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int)int{
+// func ImpressionSize(adj [][]int,node int, SeedSet []int, prob_map diff.UserProbTable, pop [2]int, interest_list [][]int, assum_list [][]int)int{
 //   ans := 0
 //
 //   S_test := make([]int ,len(Seed_set))
@@ -372,7 +432,10 @@ func FolowerSize(adj [][]int, node int) int {
 //   return ans
 // }
 
-func CallKumiawase(adj [][]int, under int, upper int, SeedSet []int, OnlyInfler bool, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, use_cost_infl bool) [][]int {
+func CallKumiawase(
+	// adj [][]int,
+	net network.Network,
+	under int, upper int, SeedSet []int, OnlyInfler bool, prob_map diff.UserProbTable, pop [2]int, interest_list [][]int, assum_list [][]int, use_cost_infl bool) [][]int {
 	ketteizumi = 0
 	counter = 0
 	aaa = make([][]int, 0)
@@ -404,7 +467,7 @@ func CallKumiawase(adj [][]int, under int, upper int, SeedSet []int, OnlyInfler 
 		}
 	}
 	//nを指定することで選べるユーザ数の上限を決めれる
-	n := len(adj)
+	n := net.N // len(adj)
 	var a int
 	k := 0
 	// n = 5
@@ -416,8 +479,8 @@ func CallKumiawase(adj [][]int, under int, upper int, SeedSet []int, OnlyInfler 
 		if SeedSet[i] == 1 {
 			continue
 		}
-		for j := 0; j < len(adj); j++ {
-			if adj[i][j] != 0 {
+		for j := 0; j < net.N; j++ {
+			if net.Adj[i][j] != 0 {
 				a = a + 1
 			}
 		}
@@ -430,15 +493,18 @@ func CallKumiawase(adj [][]int, under int, upper int, SeedSet []int, OnlyInfler 
 	pattern := make([]int, n)
 	saiki = 0
 	fmt.Println("calling combination")
-	combination(adj, pattern, elems, k, under, upper, 0, OnlyInfler, use_cost_infl)
+	combination(net, pattern, elems, k, under, upper, 0, OnlyInfler, use_cost_infl)
 	// fmt.Println("most important", aaa)
 	return aaa
 }
 
-func CallKumiawase2(adj [][]int, under float64, upper float64, SeedSet []int, OnlyInfler bool, max_user int, user_weight float64) [][]int {
+func CallKumiawase2(
+	// adj [][]int,
+	net network.Network,
+	under float64, upper float64, SeedSet []int, OnlyInfler bool, max_user int, user_weight float64) [][]int {
 	aaa = make([][]int, 0)
 	//nを指定することで選べるユーザ数の上限を決めれる
-	n := len(adj)
+	n := net.N // len(adj)
 	var a int
 	k := 0
 	// n = 5
@@ -450,8 +516,8 @@ func CallKumiawase2(adj [][]int, under float64, upper float64, SeedSet []int, On
 		if SeedSet[i] == 1 {
 			continue
 		}
-		for j := 0; j < len(adj); j++ {
-			if adj[i][j] != 0 {
+		for j := 0; j < net.N; j++ {
+			if net.Adj[i][j] != 0 {
 				a = a + 1
 			}
 		}
@@ -463,7 +529,7 @@ func CallKumiawase2(adj [][]int, under float64, upper float64, SeedSet []int, On
 	//a End
 	pattern := make([]int, n)
 	saiki = 0
-	combination2(adj, pattern, elems, k, under, upper, 0, OnlyInfler, max_user, user_weight)
+	combination2(net, pattern, elems, k, under, upper, 0, OnlyInfler, max_user, user_weight)
 	// fmt.Println("most important", aaa)
 	return aaa
 }
@@ -505,10 +571,13 @@ func CallKumiawase2(adj [][]int, under float64, upper float64, SeedSet []int, On
 //     return aaa
 // }
 
-func CallKumiawase_Impression(adj [][]int, under int, upper int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) [][]int {
+func CallKumiawase_Impression(
+	// adj [][]int,
+	net network.Network,
+	under int, upper int, SeedSet []int, prob_map diff.UserProbTable, pop [2]int, interest_list [][]int, assum_list [][]int) [][]int {
 	aaa = make([][]int, 0)
 	// fmt.Println("calling CallKumiawase")
-	n := len(adj)
+	n := net.N // len(adj)
 	var a int
 	k := 0
 	// n = 5
@@ -518,8 +587,8 @@ func CallKumiawase_Impression(adj [][]int, under int, upper int, SeedSet []int, 
 			continue
 		}
 		a = 0
-		for j := 0; j < len(adj); j++ {
-			if adj[i][j] != 0 {
+		for j := 0; j < net.N; j++ {
+			if net.Adj[i][j] != 0 {
 				a = a + 1
 			}
 		}
@@ -533,12 +602,20 @@ func CallKumiawase_Impression(adj [][]int, under int, upper int, SeedSet []int, 
 	pattern := make([]int, n)
 	saiki = 0
 
-	SameImporession(adj, pattern, elems, k, under, upper, 0, SeedSet, prob_map, pop, interest_list, assum_list)
+	sameImporession(net, pattern, elems, k, under, upper, 0, SeedSet, prob_map, pop, interest_list, assum_list)
 	// fmt.Println("most important", aaa)
 	return aaa
 }
 
-func RandomSuppression(adj [][]int, node_num int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, kurikaesi int, OnlyInfler bool) (float64, [][]float64, [][]int) {
+func RandomSuppression(
+	// adj [][]int,
+	net network.Network,
+	node_num int,
+	SeedSet []int,
+	prob_map diff.UserProbTable,
+	pop [2]int, interest_list [][]int, assum_list [][]int, kurikaesi int, OnlyInfler bool,
+	r *rand.Rand,
+) (float64, [][]float64, [][]int) {
 	var ans float64
 	var ans2 [][]float64
 	var ans3 [][]int
@@ -557,15 +634,15 @@ func RandomSuppression(adj [][]int, node_num int, SeedSet []int, prob_map [2][2]
 		S_test := make([]int, len(SeedSet))
 		_ = copy(S_test, SeedSet)
 		for i := 0; i < node_num; i++ {
-			num = rand.Intn(len(SeedSet))
+			num = r.Intn(len(SeedSet))
 			if S_test[num] != 0 {
 				i = i - 1
 
 			} else if OnlyInfler {
-				adj_len := len(adj)
+				// adj_len :=
 				f_num := 0
-				for i := 0; i < adj_len; i++ {
-					f_num += adj[num][i]
+				for i := 0; i < net.N; i++ {
+					f_num += net.Adj[num][i]
 				}
 				if f_num > 0 {
 					S_test[num] = 2
@@ -586,10 +663,10 @@ func RandomSuppression(adj [][]int, node_num int, SeedSet []int, prob_map [2][2]
 		}
 		sum = (sum - 1) / 2
 		// fmt.Println("start")
-		dist := Infl_prop_exp(0, 100, adj, S_test, prob_map, pop, interest_list, assum_list)
+		dist := RunInflProp(100, net, S_test, prob_map, pop, interest_list, assum_list, r)
 		// fmt.Println("end")
 		ans2_v[0] = float64(node_num)
-		ans2_v[1] = float64(CalFolower(adj, S_test))
+		ans2_v[1] = float64(calFollower(net, S_test))
 		ans2_v[2] = dist[diff.InfoType_T]
 		ans2_v[3] = dist[diff.InfoType_F]
 
@@ -607,7 +684,15 @@ func RandomSuppression(adj [][]int, node_num int, SeedSet []int, prob_map [2][2]
 
 }
 
-func PythonSuppression(adj [][]int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, OnlyInfler bool) ([]float64, [][]int) {
+func PythonSuppression(
+	// adj [][]int,
+	net network.Network,
+	SeedSet []int,
+	prob_map diff.UserProbTable,
+	pop [2]int,
+	interest_list [][]int, assum_list [][]int, OnlyInfler bool,
+	r *rand.Rand,
+) ([]float64, [][]int) {
 	var ans float64
 	var ans2 []float64
 	var ans3 [][]int
@@ -687,12 +772,12 @@ func PythonSuppression(adj [][]int, SeedSet []int, prob_map [2][2][2][2]float64,
 		}
 		sum = (sum - 1) / 2
 		// fmt.Println("start")
-		dist := Infl_prop_exp(-1, 1000, adj, S_test, prob_map, pop, interest_list, assum_list)
+		dist := RunInflProp(1000, net, S_test, prob_map, pop, interest_list, assum_list, r)
 
 		// print("あ\t")
 		// fmt.Println("end")
 		// ans2_v[0] = float64(node_num)
-		ans2_v[1] = float64(CalFolower(adj, S_test))
+		ans2_v[1] = float64(calFollower(net, S_test))
 		ans2_v[2] = dist[diff.InfoType_T]
 		ans2_v[3] = dist[diff.InfoType_F]
 
@@ -711,7 +796,13 @@ func PythonSuppression(adj [][]int, SeedSet []int, prob_map [2][2][2][2]float64,
 
 }
 
-func Selected_Suppression(adj [][]int, selected_list [][]int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) float64 {
+func Selected_Suppression(
+	// adj [][]int,
+	net network.Network,
+	selected_list [][]int, SeedSet []int, prob_map diff.UserProbTable,
+	pop [2]int, interest_list [][]int, assum_list [][]int,
+	r *rand.Rand,
+) float64 {
 	var ans float64
 	ans = 0
 
@@ -726,7 +817,7 @@ func Selected_Suppression(adj [][]int, selected_list [][]int, SeedSet []int, pro
 			}
 			S_test[node] = 2
 		}
-		dist := Infl_prop_exp(1, 100, adj, S_test, prob_map, pop, interest_list, assum_list)
+		dist := RunInflProp(100, net, S_test, prob_map, pop, interest_list, assum_list, r)
 
 		ans += dist[diff.InfoType_T]
 	}
@@ -751,7 +842,13 @@ func Selected_Suppression(adj [][]int, selected_list [][]int, SeedSet []int, pro
 	}
 }
 
-func Selected_SuppressionReturnList(adj [][]int, selected_list [][]int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) []float64 {
+func SelectedSuppressionReturnList(
+	// adj [][]int,
+	net network.Network,
+	selected_list [][]int,
+	SeedSet []int, prob_map diff.UserProbTable,
+	pop [2]int, interest_list [][]int, assum_list [][]int,
+	r *rand.Rand) []float64 {
 	// var ans float64
 	ans := make([]float64, len(selected_list))
 
@@ -766,7 +863,7 @@ func Selected_SuppressionReturnList(adj [][]int, selected_list [][]int, SeedSet 
 			}
 			S_test[node] = 2
 		}
-		dist := Infl_prop_exp(1, 100, adj, S_test, prob_map, pop, interest_list, assum_list) //here
+		dist := RunInflProp(100, net, S_test, prob_map, pop, interest_list, assum_list, r) //here
 
 		ans[i] = dist[diff.InfoType_T]
 	}
@@ -774,7 +871,15 @@ func Selected_SuppressionReturnList(adj [][]int, selected_list [][]int, SeedSet 
 	return ans
 }
 
-func Selected_Suppression_Maximum(adj [][]int, selected_list [][]int, SeedSet []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) ([]int, float64, float64) {
+func SelectedSuppressionMaximum(
+	// adj [][]int,
+	net network.Network,
+	selected_list [][]int,
+	SeedSet []int,
+	prob_map diff.UserProbTable, pop [2]int,
+	interest_list [][]int, assum_list [][]int,
+	r *rand.Rand,
+) ([]int, float64, float64) {
 	var ans float64
 	var max_users []int
 	ans = 0
@@ -796,8 +901,8 @@ func Selected_Suppression_Maximum(adj [][]int, selected_list [][]int, SeedSet []
 			S_test[node] = 2
 		}
 		// fmt.Println(S_test)
-		rand.Seed(100)
-		dist := Infl_prop_exp(-1, 1000, adj, S_test, prob_map, pop, interest_list, assum_list)
+		// rand.Seed(100)
+		dist := RunInflProp(1000, net, S_test, prob_map, pop, interest_list, assum_list, r)
 
 		ans = dist[diff.InfoType_T]
 		diff_f = dist[diff.InfoType_F]
@@ -821,11 +926,15 @@ func Selected_Suppression_Maximum(adj [][]int, selected_list [][]int, SeedSet []
 	}
 }
 
-func CalFolower(adj [][]int, nodes []int) int {
+func calFollower(
+	// adj [][]int,
+	net network.Network,
+	nodes []int) int {
 	ans := 0
 	for node, v := range nodes {
 		if v == 2 {
-			ans += FolowerSize(adj, node)
+			// ans += FolowerSize(adj, node)
+			ans += net.Followers[node]
 		}
 	}
 
