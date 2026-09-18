@@ -25,8 +25,8 @@ func FindMostFollowedUser(net network.Network) int {
 	return maxI
 }
 
-func UsersToSeedSet(users []int, N int, info diff.SeedInfo) []diff.SeedInfo {
-	seedSet := make([]diff.SeedInfo, N)
+func UsersToSeedSet(users []int, net network.Network, info diff.SeedInfo) []diff.SeedInfo {
+	seedSet := make([]diff.SeedInfo, net.N)
 	for _, i := range users {
 		seedSet[i] = info
 	}

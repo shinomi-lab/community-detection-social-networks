@@ -24,13 +24,19 @@ func main() {
 	assumList := diff.MakeAssumList(net.N, r)
 	probTable := diff.GetUserProbTable()
 	nick := 1
-	S_f_type := 2
 
 	costFunc := opt.CostDefault
 	capacity := 500.0
 	userWeight := 1.0
 
-	SeedSet, usersFSeeded, mostFollowedUser := exp.MakeSeedSetFString2(net, S_f_type)
+	// S_f_type := 2
+	// SeedSet, usersFSeeded, mostFollowedUser := exp.MakeSeedSetFString2(net, S_f_type)
+	nFollowersFrom := 21
+	nFollowersTo := 31
+	skip := 20
+	usersFSeeded := exp.ChooseMultipleUsers(net, nFollowersFrom, nFollowersTo, skip)
+	seedSet := exp.UsersToSeedSet(usersFSeeded, net, diff.SeedInfoF)
+	mostFollowedUser := 0 // exp.FindMostFollowedUser(net)
 
 	popList := make(diff.PopList, diff.Pops_n)
 	popList[diff.InfoType_F] = diff.PopHigh
@@ -39,7 +45,7 @@ func main() {
 	DP_ans, _ := opt.DP(
 		100,
 		net,
-		SeedSet,
+		seedSet,
 		probTable,
 		popList,
 		interestList,
