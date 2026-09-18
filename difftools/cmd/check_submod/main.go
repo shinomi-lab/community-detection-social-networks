@@ -5,6 +5,7 @@ import (
 	diff "difftools/diffusion"
 	exp "difftools/experiment"
 	"difftools/network"
+	"difftools/optimization"
 	"fmt"
 	"math/rand"
 )
@@ -51,25 +52,40 @@ func main() {
 		capacity := 302.0
 		//コスト=拡散量用
 
-		use_user := false     //コスト：ユーザ
-		use_infl := true      //コスト：拡散量
-		use_kaiki := false    //コスト：予想拡散量　使ってない
-		use_follower := false //コスト：総フォロワー数　使ってない
+		// use_user := false     //コスト：ユーザ
+		// use_infl := true      //コスト：拡散量
+		// use_kaiki := false    //コスト：予想拡散量　使ってない
+		// use_follower := false //コスト：総フォロワー数　使ってない
+		costFunc := optimization.CostInfluence
 
 		S_f_type := 2 //1:単独　2:複数
 		for j := 1.0; j < 5.0; j++ {
-			if use_infl && use_congress {
-				capacity = j * 100
-				// fmt.Println("okokokok")
-			} else if use_infl && !use_congress {
-				capacity = j * 5
-			} else if use_follower {
+			switch costFunc {
+			case optimization.CostInfluence:
+				if use_congress {
+					capacity = j * 100
+				} else {
+					capacity = j * 5
+				}
+			case optimization.CostFollower:
 				capacity = j * 30
-			} else {
-
+			default:
 				capacity = j
 			}
+			// if costFunc == optimization.CostInfluence {
+			// }
+			// if use_infl && use_congress {
+			// 	capacity = j * 100
+			// 	// fmt.Println("okokokok")
+			// } else if use_infl && !use_congress {
+			// 	capacity = j * 5
+			// } else if use_follower {
+			// 	capacity = j * 30
+			// } else {
+			// 	capacity = j
+			// }
 			// fmt.Println(capacity)
+			//
 			exp.ComputeMaximizationDP(
 				net,
 				interestList,
@@ -77,10 +93,11 @@ func main() {
 				probTable,
 				user_weight,
 				capacity,
-				use_kaiki,
-				use_user,
-				use_infl,
-				use_follower,
+				// use_kaiki,
+				// use_user,
+				// use_infl,
+				// use_follower,
+				costFunc,
 				1,
 				S_f_type,
 				false,

@@ -39,9 +39,9 @@ import (
 
 // 	n := len(arr)
 
-// 	var interest_list [][]int = diff.Make_interest_list(n, seed)
+// 	var interest_list diff.InterestList = diff.Make_interest_list(n, seed)
 
-// 	var assum_list [][]int = diff.Make_assum_list(n, seed)
+// 	var assum_list diff.AssumList = diff.Make_assum_list(n, seed)
 // 	var adj [][]int = make([][]int, n)
 
 // 	for i := 0; i < n; i++ {
@@ -56,13 +56,14 @@ import (
 func user_same(
 	// adj [][]int,
 	net network.Network,
-	interest_list [][]int, assum_list [][]int, exit_f bool, use_cost_infl bool,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList, exit_f bool, use_cost_infl bool,
 	r *rand.Rand,
 ) {
-	var pop_list [2]int
-
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	var pop_list = diff.MakePopList(diff.PopHigh, diff.PopHigh)
+	// var pop_list [2]int
+	// pop_list[0] = diff.PopHigh
+	// pop_list[1] = diff.PopHigh
 
 	// var seq [16]float64 = diff.Make_probability()
 	// var prob_map diff.UserProbTable = diff.Map_probagbility(seq)
@@ -99,19 +100,19 @@ func user_same(
 func follower_same(
 	// adj [][]int,
 	net network.Network,
-	interest_list [][]int, assum_list [][]int, exit_f bool, use_cost_infl bool,
+	interest_list diff.InterestList, assum_list diff.AssumList, exit_f bool, use_cost_infl bool,
 	r *rand.Rand,
 ) {
-	var pop_list [2]int
-
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	var pop_list = diff.MakePopList(diff.PopHigh, diff.PopHigh)
+	// var pop_list [2]int
+	// pop_list[0] = diff.PopHigh
+	// pop_list[1] = diff.PopHigh
 
 	// var seq [16]float64 = diff.Make_probability()
 	// var prob_map diff.UserProbTable = diff.Map_probagbility(seq)
 	prob_map := diff.GetUserProbTable()
 
-	SeedSet_F := make([]int, net.N)
+	SeedSet_F := make([]diff.SeedInfo, net.N)
 	max_user := 0 //最もフォロワ数が多いユーザ名
 	max_user_num := 0
 	user_num_counter := 0
@@ -127,7 +128,7 @@ func follower_same(
 			max_user_num = user_num_counter
 		}
 	}
-	SeedSet_F[max_user] = 1
+	SeedSet_F[max_user] = diff.SeedInfoF // 1
 
 	opt.SameImpressionCostFollower(
 		100, net, SeedSet_F, prob_map, pop_list, interest_list, assum_list, 15, 16, exit_f, use_cost_infl, r)

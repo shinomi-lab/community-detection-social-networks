@@ -4,12 +4,15 @@ package optimization
 
 import (
 	"bufio"
+	"bytes"
 	diff "difftools/diffusion"
 	"difftools/network"
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -18,11 +21,11 @@ func Greedy(
 	sample_size int,
 	// adj [][]int,
 	net network.Network,
-	Seed_set []int,
+	Seed_set []diff.SeedInfo,
 	prob_map diff.UserProbTable,
-	pop [2]int,
-	interest_list [][]int,
-	assum_list [][]int,
+	pop diff.PopList,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 	ans_len int,
 	Count_true bool,
 	sample_size2 int,
@@ -37,18 +40,17 @@ func Greedy(
 	var ans_v []float64
 
 	ans = make([]int, 0, ans_len)
-	S := make([]int, len(Seed_set))
+	S := make([]diff.SeedInfo, len(Seed_set))
 	_ = copy(S, Seed_set)
-	S_test := make([]int, len(Seed_set))
+	S_test := make([]diff.SeedInfo, len(Seed_set))
 	_ = copy(S_test, Seed_set)
 
-	var info_num int
-
-	if Count_true {
-		info_num = 2
-	} else {
-		info_num = 1
-	}
+	var info_num diff.SeedInfo = diff.BoolToSeed(Count_true)
+	// if Count_true {
+	// 	info_num = diff.SeedInfoT // 2
+	// } else {
+	// 	info_num = diff.SeedInfoF // 1
+	// }
 
 	for i := 0; i < ans_len; i++ {
 		fmt.Println(i)
@@ -107,11 +109,11 @@ func Greedy_exp(
 	sample_size int,
 	// adj [][]int,
 	net network.Network,
-	Seed_set []int,
+	Seed_set []diff.SeedInfo,
 	prob_map diff.UserProbTable,
-	pop [2]int,
-	interest_list [][]int,
-	assum_list [][]int,
+	pop diff.PopList,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 	ans_len int,
 	Count_true bool,
 	capacity float64,
@@ -135,20 +137,19 @@ func Greedy_exp(
 	var ans []int
 
 	ans = make([]int, 0, ans_len)
-	S := make([]int, len(Seed_set))
+	S := make([]diff.SeedInfo, len(Seed_set))
 	_ = copy(S, Seed_set)
-	S_test := make([]int, len(Seed_set))
+	S_test := make([]diff.SeedInfo, len(Seed_set))
 	_ = copy(S_test, Seed_set)
 	cap_use := capacity
 	pre_infl := 0.0
 
-	var info_num int
-
-	if Count_true {
-		info_num = 2
-	} else {
-		info_num = 1
-	}
+	var info_num diff.SeedInfo = diff.BoolToSeed(Count_true)
+	// if Count_true {
+	// 	info_num = diff.SeedInfoT // 2
+	// } else {
+	// 	info_num = diff.SeedInfoF // 1
+	// }
 
 	for {
 		max = -1
@@ -214,13 +215,14 @@ func Cal_cost(
 	if f == 0 {
 		f = 10000000000000
 	}
-	u_max := net.N // len(adj)
-	f_max := 0
-	for i := 0; i < u_max; i++ {
-		if net.Adj[max_user][i] == 1 {
-			f_max++
-		}
-	}
+	f_max := net.Followers[max_user]
+	// u_max := net.N // len(adj)
+	// f_max := 0
+	// for i := 0; i < u_max; i++ {
+	// 	if net.Adj[max_user][i] == 1 {
+	// 		f_max++
+	// 	}
+	// }
 	// fmt.Println("folowersize",f)
 	// fmt.Println("f:",f,"f_wight:",f_wight,"f_max:",f_max,"u_weight:",u_weight)
 	return float64(f)*f_wight/float64(f_max) + u_weight/2
@@ -289,51 +291,7 @@ func Cal_cost_kaiki_int(
 	node int,
 	max_user int,
 ) int {
-	// return 100.0
-	// f := FolowerSize(adj, node)
-	f := net.Followers[node]
-	if f == 0 {
-		f = 10000000000000
-	}
-	file, err := os.Open("kaiki.txt")
-	if err != nil {
-		fmt.Println("ファイルを開く際にエラーが発生しました:", err)
-		return -1
-	}
-	defer file.Close()
-
-	// ファイルを読み込む
-	scanner := bufio.NewScanner(file)
-	var line string
-	if scanner.Scan() {
-		line = scanner.Text()
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Println("ファイルを読み取る際にエラーが発生しました:", err)
-		return -1
-	}
-
-	// コンマで分割して整数に変換する
-	parts := strings.Split(line, ",")
-	if len(parts) != 2 {
-		fmt.Println("予期しないデータ形式です")
-		return -1
-	}
-
-	intercept, err := strconv.ParseFloat(parts[0], 64)
-	if err != nil {
-		fmt.Println("最初の部分を整数に変換する際にエラーが発生しました:", err)
-		return -1
-	}
-
-	slope, err := strconv.ParseFloat(parts[1], 64)
-	if err != nil {
-		fmt.Println("二番目の部分を整数に変換する際にエラーが発生しました:", err)
-		return -1
-	}
-	// fmt.Println(math.Log(float64(f))*slope +intercept)
-	return int(math.Round(math.Log(float64(f))*slope + intercept))
+	return int(math.Round(Cal_cost_kaiki(u_weight, f_wight, net, node, max_user)))
 }
 
 func cal_cost_infl(
@@ -341,12 +299,12 @@ func cal_cost_infl(
 	net network.Network,
 	node int,
 	prob_map diff.UserProbTable,
-	pop [2]int,
-	interest_list [][]int,
-	assum_list [][]int,
+	pop diff.PopList,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 ) float64 {
 
-	S_test := make([]int, net.N)
+	S_test := make([]diff.SeedInfo, net.N)
 	// S_test[node] = 2
 	S_test[node] = diff.SeedInfoT
 	r := rand.New(rand.NewSource((100))) // [todo]
@@ -360,9 +318,9 @@ func Cal_cost_infl_int(
 	net network.Network,
 	node int,
 	prob_map diff.UserProbTable,
-	pop [2]int,
-	interest_list [][]int,
-	assum_list [][]int,
+	pop diff.PopList,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 ) int {
 	cost := cal_cost_infl(net, node, prob_map, pop, interest_list, assum_list)
 	return int(math.Round(cost))
@@ -428,76 +386,143 @@ func (ui *Users_infl) CopyUsers(users []int) {
 	copy(ui.Users, users)
 }
 
+type CostFunc int
+
+const (
+	CostDefault CostFunc = iota
+	CostKaiki
+	CostUser
+	CostFollower
+	CostInfluence
+)
+
+var costFuncToString = map[CostFunc]string{
+	CostDefault:   "default",
+	CostKaiki:     "kaiki",
+	CostUser:      "user",
+	CostFollower:  "follower",
+	CostInfluence: "influence",
+}
+
+var stringToCostFunc = map[string]CostFunc{
+	"default":   CostDefault,
+	"kaiki":     CostKaiki,
+	"user":      CostUser,
+	"follower":  CostFollower,
+	"influence": CostInfluence,
+}
+
+func (f CostFunc) String() string {
+	if str, ok := costFuncToString[f]; ok {
+		return str
+	}
+	return "default"
+}
+
+func (s CostFunc) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(s.String())
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
+
+func (s *CostFunc) UnmarshalJSON(b []byte) error {
+	var str string
+	if err := json.Unmarshal(b, &str); err != nil {
+		return err
+	}
+
+	if val, ok := stringToCostFunc[str]; ok {
+		*s = val
+	} else {
+		*s = CostDefault // 定義外の文字列はCostDefault
+	}
+	return nil
+}
+
+// countTure: 新情報を扱うかどうか
+//
+// nick: 刻み幅，大きいほど計算時間が短く精度が悪くなる
+//
+// OnlyInfler: 次数を持たないユーザも扱うかどうか
+//
+// costFunc: CostKaiki | CostFollower | CostUser | CostInfluence | CostWeight
 func DP(
 	sampleSize int,
-	// adj [][]int,
 	net network.Network,
-	seedSet []int,
-	probMap diff.UserProbTable,
-	pop [2]int,
-	interestList [][]int,
-	assumList [][]int,
-	ansLen int,
+	seedSet []diff.SeedInfo,
+	probTable diff.UserProbTable,
+	pop diff.PopList,
+	interestList diff.InterestList,
+	assumList diff.AssumList,
 	countTrue bool,
 	capacity float64,
 	maxUser int,
 	onlyInfler bool,
 	userWeight float64,
-	useKaiki bool,
-	useFollower bool,
+	costFunc CostFunc,
 	nick int,
 	nonUseList []int,
-	useUser bool,
-	useInfl bool,
 	r *rand.Rand,
+	// ansLen int,
+	// useKaiki bool,
+	// useFollower bool,
+	// useUser bool,
+	// useInfl bool,
 ) ([]int, float64) {
-
-	//count_ture: 新情報を扱うかどうか
-	//nick: 刻み幅，大きいほど計算時間が短く精度が悪くなる
-	//OnlyInfler: 次数を持たないユーザも扱うかどうか
-
-	var info_num int
-	var result float64
-	var cost_i float64
-	var cost_i_int int
-	use_int_cost := false
-
-	if countTrue {
-		info_num = 2
-	} else {
-		info_num = 1
-	}
-
-	var costcal func(float64, float64, network.Network, int, int) float64
-	var costcal_int func(float64, float64, network.Network, int, int) int
+	var info_num diff.SeedInfo = diff.BoolToSeed(countTrue)
 
 	//制約関数の設定
-	if useKaiki {
-		use_int_cost = true
-		costcal = Cal_cost_kaiki
-		costcal_int = Cal_cost_kaiki_int
-	} else if useUser {
-		use_int_cost = true
-		costcal = Cal_cost_user
-		costcal_int = Cal_cost_user_int
-	} else if useFollower {
-		use_int_cost = true
-		costcal = Cal_cost_follower
-		costcal_int = Cal_cost_follower_int
-	} else {
-		use_int_cost = false
-		costcal = Cal_cost
+	var costInflFunc func(focusUser int) int
+
+	// use_int_cost := false
+	// var costcal func(float64, float64, network.Network, int, int) float64
+	// var costcal_int func(float64, float64, network.Network, int, int) int
+	// if useKaiki {
+	// 	// use_int_cost = true
+	// 	// costcal = Cal_cost_kaiki
+	// 	// costcal_int = Cal_cost_kaiki_int
+	// } else if useUser {
+	// 	use_int_cost = true
+	// 	// costcal = Cal_cost_user
+	// 	// costcal_int = Cal_cost_user_int
+	// } else if useFollower {
+	// 	// use_int_cost = true
+	// 	// costcal = Cal_cost_follower
+	// 	// costcal_int = Cal_cost_follower_int
+	// } else {
+	// 	use_int_cost = false
+	// 	costcal = Cal_cost
+	// }
+
+	switch costFunc {
+	case CostDefault:
+		costInflFunc = func(focusUser int) int {
+			return int(Cal_cost(userWeight, 1-userWeight, net, focusUser, maxUser))
+		}
+	case CostKaiki:
+		costInflFunc = func(focusUser int) int {
+			return Cal_cost_kaiki_int(userWeight, 1-userWeight, net, focusUser, maxUser)
+		}
+	case CostUser:
+		costInflFunc = func(focusUser int) int {
+			return 1
+		}
+	case CostFollower:
+		costInflFunc = func(focusUser int) int {
+			return net.Followers[focusUser]
+		}
+	case CostInfluence:
+		costInflFunc = func(focusUser int) int {
+			return Cal_cost_infl_int(net, focusUser, probTable, pop, interestList, assumList)
+		}
 	}
 
-	S := make([]int, len(seedSet))
+	S := make([]diff.SeedInfo, len(seedSet))
 	_ = copy(S, seedSet)
 
 	onlyiflerlist := OnlyInflerlist(net, nonUseList)
 	onlyinfler_num := len(onlyiflerlist)
-	// fmt.Println("aaa",onlyiflerlist)
-	// fmt.Println("onlyinfler_num",onlyinfler_num)
-	// fmt.Println(len(adj))
-	// os.Exit(0)
 
 	n := onlyinfler_num
 	l_list := int(int(capacity)/nick) + 1
@@ -509,30 +534,30 @@ func DP(
 		// dp[i] = make([]float64,l_list)
 		dp[i] = make([]Users_infl, l_list)
 	}
-	// fmt.Println(dp)
-	// os.Exit(0)
-	for w := 0; w < l_list; w++ {
+
+	for w := range l_list {
 		dp[0][w].Infl = 0
 	}
-	for i := 0; i < n; i++ {
-		focus_user := onlyiflerlist[i]
-		if !use_int_cost { //cost_inflだけ引数の数が違うため別処理
-			if useInfl {
-				cost_i = cal_cost_infl(net, focus_user, probMap, pop, interestList, assumList)
-			} else {
-				cost_i = costcal(userWeight, 1-userWeight, net, focus_user, maxUser)
-			}
-			cost_i_int = int(cost_i)
-		} else {
-			if useInfl {
-				cost_i_int = Cal_cost_infl_int(net, focus_user, probMap, pop, interestList, assumList)
-			} else {
-				cost_i_int = costcal_int(userWeight, 1-userWeight, net, focus_user, maxUser)
-			}
-		}
-		for j := 0; j < l_list; j++ {
+	for i := range n {
+		focusUser := onlyiflerlist[i]
+		// if !use_int_cost { //cost_inflだけ引数の数が違うため別処理
+		// 	if useInfl {
+		// 		cost_i = cal_cost_infl(net, focus_user, probMap, pop, interestList, assumList)
+		// 	} else {
+		// 		cost_i = costcal(userWeight, 1-userWeight, net, focus_user, maxUser)
+		// 	}
+		// 	cost_i_int = int(cost_i)
+		// } else {
+		// 	if useInfl {
+		// 		cost_i_int = Cal_cost_infl_int(net, focus_user, probMap, pop, interestList, assumList)
+		// 	} else {
+		// 		cost_i_int = costcal_int(userWeight, 1-userWeight, net, focus_user, maxUser)
+		// 	}
+		// }
+		cost_i_int := costInflFunc(focusUser)
+
+		for j := range l_list {
 			// cost_w := j*nick
-			// fmt.Println("i:",i)
 			//dp[i+1][j]に代入していく i番目までを選べるコストj*nick以下
 			if j < cost_i_int/nick { //大きすぎると不可能
 				dp[i+1][j].Infl = dp[i][j].Infl
@@ -544,37 +569,35 @@ func DP(
 			for k := 0; k < len(dp[i][last_cost].Users); k++ {
 				S[dp[i][last_cost].Users[k]] = info_num
 			}
-			S[focus_user] = info_num
+			S[focusUser] = info_num
 			// rand.Seed(100) //おそらく後で消す　重要
-			dist := RunInflProp(sampleSize, net, S, probMap, pop, interestList, assumList, r)
-			if countTrue {
-				result = dist[diff.InfoType_T]
-			} else {
-				result = dist[diff.InfoType_F]
-			} //resultをdp[i][j].users+onlyiflerlist[i]での拡散にする複数回同じ拡散を調べたくないけど，一旦後回し？
-			// fmt.Println(len(dp),len(dp[i]),dp[i+1][j],i,j)
+			dist := RunInflProp(sampleSize, net, S, probTable, pop, interestList, assumList, r)
+			// if countTrue {
+			// 	result = dist[diff.InfoType_T]
+			// } else {
+			// 	result = dist[diff.InfoType_F]
+			// }
+			result := dist[info_num]
+			//resultをdp[i][j].users+onlyiflerlist[i]での拡散にする複数回同じ拡散を調べたくないけど，一旦後回し？
 			if dp[i][j].Infl < result {
 
 				dp[i+1][j].Infl = roundTo(result, 4)
 				dp[i+1][j].CopyUsers(dp[i][last_cost].Users)
-				dp[i+1][j].AddUser(focus_user)
+				dp[i+1][j].AddUser(focusUser)
 			} else {
 				dp[i+1][j].Infl = dp[i][j].Infl
 				dp[i+1][j].CopyUsers(dp[i][j].Users)
 			}
 		}
 	}
-	// PrintDp(dp)
-	// os.Exit(0)
-
 	return dp[n][l_list-1].Users, dp[n][l_list-1].Infl
 }
 
-func PrintDp(dp [][]Users_infl) {
-	for i := 0; i < len(dp); i++ {
-		fmt.Println(dp[i])
-	}
-}
+// func PrintDp(dp [][]Users_infl) {
+// 	for i := 0; i < len(dp); i++ {
+// 		fmt.Println(dp[i])
+// 	}
+// }
 
 func OnlyInflerlist(
 	// adj [][]int,
@@ -586,7 +609,8 @@ func OnlyInflerlist(
 	for i := 0; i < net.N; i++ {
 		// if FolowerSize(adj, i) != 0 {
 		if net.Followers[i] != 0 {
-			if !IsInList(i, non_use_list) {
+			// if !isInList(i, non_use_list) {
+			if !slices.Contains(non_use_list, i) {
 				ans = append(ans, i)
 			}
 		}
@@ -595,13 +619,14 @@ func OnlyInflerlist(
 	return ans
 }
 
-func IsInList(n int, list []int) bool {
-	for i := 0; i < len(list); i++ {
-		if list[i] == n {
-			return true
-		}
-	}
-	return false
+func isInList(n int, list []int) bool {
+	return slices.Contains(list, n)
+	// for _, k := range list {
+	// 	if k == n {
+	// 		return true
+	// 	}
+	// }
+	// return false
 }
 
 func roundTo(n float64, precision int) float64 {

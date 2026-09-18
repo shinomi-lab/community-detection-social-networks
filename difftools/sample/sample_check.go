@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func Make_adj_interest_assum(adjFilePath string, r *rand.Rand) (network.Network, [][]int, [][]int) {
+func Make_adj_interest_assum(adjFilePath string, r *rand.Rand) (network.Network, diff.InterestList, diff.AssumList) {
 	// bytes, err := os.ReadFile(adjFilePath)
 	// if err != nil {
 	// 	panic(err)
@@ -29,8 +29,8 @@ func Make_adj_interest_assum(adjFilePath string, r *rand.Rand) (network.Network,
 	net := network.ReadJson(adjFilePath)
 	n := net.N
 
-	var interest_list [][]int = diff.MakeInterestList(n, r)
-	var assum_list [][]int = diff.MakeAssumList(n, r)
+	var interest_list diff.InterestList = diff.MakeInterestList(n, r)
+	var assum_list diff.AssumList = diff.MakeAssumList(n, r)
 	// var adj [][]int = make([][]int, n)
 
 	// for i := 0; i < n; i++ {
@@ -45,19 +45,22 @@ func Make_adj_interest_assum(adjFilePath string, r *rand.Rand) (network.Network,
 func use_strict(
 	// adj [][]int,
 	net network.Network,
-	interest_list [][]int,
-	assum_list [][]int,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 	user_weight float64,
-) ([][]int, []int, diff.UserProbTable, [2]int) {
+) ([][]int, []diff.SeedInfo, diff.UserProbTable, diff.PopList) {
 
 	// var n int = 50
 	// var seed int64 = 1
 	// var K_F int = 5
 	// var K_T int = 10
 	// var sample_size int = 1000
-	var pop_list [2]int
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	var pop_list = diff.MakePopList(
+		// pop_list[0] = diff.PopHigh
+		diff.PopHigh,
+		// pop_list[1] = diff.PopHigh
+		diff.PopHigh,
+	) // [2]int
 
 	// fmt.Println(K_T, K_F, diff.InfoType_F, sample_size, pop_list)
 	// adjFilePath := "adj_jsonTwitterInteractionUCongress.txt"
@@ -66,9 +69,9 @@ func use_strict(
 
 	// var SeedSet_F []int = diff.Make_seedSet_F(n, 1, seed, adj)
 
-	// var interest_list [][]int = diff.Make_interest_list(n, seed)
+	// var interest_list diff.InterestList = diff.Make_interest_list(n, seed)
 	//
-	// var assum_list [][]int = diff.Make_assum_list(n, seed)
+	// var assum_list diff.AssumList = diff.Make_assum_list(n, seed)
 
 	// var seq [16]float64 = diff.Make_probability()
 	var prob_map diff.UserProbTable = diff.GetUserProbTable()
@@ -79,7 +82,7 @@ func use_strict(
 	// fmt.Println("prob_map")
 	// fmt.Println(prob_map)
 
-	SeedSet_F_strong2 := make([]int, net.N)
+	SeedSet_F_strong2 := make([]diff.SeedInfo, net.N)
 	max_user := 0 //最もフォロワ数が多いユーザ名
 	max_user_num := 0
 	user_num_counter := 0
@@ -155,18 +158,21 @@ func use_strict(
 func use_greedy(
 	// adj [][]int,
 	net network.Network,
-	interest_list [][]int, assum_list [][]int,
+	interest_list diff.InterestList, assum_list diff.AssumList,
 	user_weight float64, capacity float64,
-	) ([]int, diff.UserProbTable, [2]int) {
+) ([]diff.SeedInfo, diff.UserProbTable, diff.PopList) {
 
 	// var n int = 50
 	// var seesd int64 = 1
 	// var K_F int = 5
 	// var K_T int = 10
 	// var sample_size int = 1000
-	var pop_list [2]int
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	var pop_list = diff.MakePopList(
+		// pop_list[0] = diff.PopHigh
+		diff.PopHigh,
+		// pop_list[1] = diff.PopHigh
+		diff.PopHigh,
+	) // [2]int
 
 	// fmt.Println(string(bytes))
 
@@ -174,9 +180,9 @@ func use_greedy(
 
 	// var SeedSet_F []int = diff.Make_seedSet_F(n, 1, seed, adj)
 
-	// var interest_list [][]int = diff.Make_interest_list(n, seed)
+	// var interest_list diff.InterestList = diff.Make_interest_list(n, seed)
 	//
-	// var assum_list [][]int = diff.Make_assum_list(n, seed)
+	// var assum_list diff.AssumList = diff.Make_assum_list(n, seed)
 
 	// var seq [16]float64 = diff.Make_probability()
 
@@ -188,7 +194,7 @@ func use_greedy(
 	// fmt.Println("prob_map")
 	// fmt.Println(prob_map)
 
-	SeedSet_F_strong2 := make([]int, net.N)
+	SeedSet_F_strong2 := make([]diff.SeedInfo, net.N)
 	max_user := 0 //最もフォロワ数が多いユーザ名
 	max_user_num := 0
 	user_num_counter := 0
@@ -245,15 +251,15 @@ func use_greedy(
 	}
 	greedy_ans2 := make([][]int, 0)
 	greedy_ans2 = append(greedy_ans2, greedy_ans)
-	SeedSet_F_strong2 = make([]int, net.N)
+	SeedSet_F_strong2 = make([]diff.SeedInfo, net.N)
 	SeedSet_F_strong2[max_user] = 1
 	_, test_greedy_ans_v, test_greedy_ans_fv := opt.SelectedSuppressionMaximum(
 		net, greedy_ans2, SeedSet_F_strong2, prob_map, pop_list, interest_list, assum_list, r)
-	SeedSet_F_strong2 = make([]int, net.N) //念のため初期化
+	SeedSet_F_strong2 = make([]diff.SeedInfo, net.N) //念のため初期化
 	SeedSet_F_strong2[max_user] = 1
 
 	fmt.Println("虚偽情報アリの解", greedy_ans, test_greedy_ans_v, test_greedy_ans_fv)
-	nonF_SeedSet := make([]int, net.N)
+	nonF_SeedSet := make([]diff.SeedInfo, net.N)
 
 	_, test_greedy_ans_v, test_greedy_ans_fv = opt.SelectedSuppressionMaximum(
 		net, greedy_ans2, nonF_SeedSet, prob_map, pop_list, interest_list, assum_list, r)
@@ -261,7 +267,7 @@ func use_greedy(
 	fmt.Println("虚偽情報アリの解を無しに使ってみたら...", test_greedy_ans_v, test_greedy_ans_fv)
 	// fmt.Println(greedy_ans_v)
 	fmt.Println("cost_sum:", cost_sum)
-	nonF_SeedSet = make([]int, net.N) //念のため初期化
+	nonF_SeedSet = make([]diff.SeedInfo, net.N) //念のため初期化
 	greedy_ans, _ = opt.Greedy_exp(
 		100, net, nonF_SeedSet, prob_map, pop_list, interest_list, assum_list,
 		infler_num, true, capacity, max_user, true, user_weight, true, r)
@@ -274,7 +280,7 @@ func use_greedy(
 	greedy_ans2 = make([][]int, 0)
 	greedy_ans2 = append(greedy_ans2, greedy_ans)
 
-	nonF_SeedSet = make([]int, net.N) //念のため初期化
+	nonF_SeedSet = make([]diff.SeedInfo, net.N) //念のため初期化
 	_, test_greedy_ans_v, test_greedy_ans_fv = opt.SelectedSuppressionMaximum(
 		net, greedy_ans2, nonF_SeedSet, prob_map, pop_list, interest_list, assum_list, r)
 
@@ -298,10 +304,10 @@ type Parameter struct {
 	K_F              int
 	K_T              int
 	Mont_sample_size int
-	Pop_list         [2]int
+	Pop_list         diff.PopList
 	SeedSet_F        []int
 	ProbMap          diff.UserProbTable
-	InterestList     [][]int
-	AssumList        [][]int
+	InterestList     diff.InterestList
+	AssumList        diff.AssumList
 	// Seq              [16]float64
 }

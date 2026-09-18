@@ -16,9 +16,9 @@ func SameImpressionCost(
 	net network.Network,
 	nonUseList []int,
 	probMap diff.UserProbTable,
-	pop [2]int,
-	interestList [][]int,
-	assumList [][]int,
+	pop diff.PopList,
+	interestList diff.InterestList,
+	assumList diff.AssumList,
 	OnlyInfler bool,
 	exit_f bool,
 	r *rand.Rand,
@@ -27,8 +27,8 @@ func SameImpressionCost(
 	var n int = net.N
 	var result float64
 
-	S := make([]int, net.N)
-	S_test := make([]int, net.N)
+	S := make([]diff.SeedInfo, net.N)
+	S_test := make([]diff.SeedInfo, net.N)
 	if exit_f {
 		max_user := 0 //最もフォロワ数が多いユーザ名
 		max_user_num := 0
@@ -45,12 +45,11 @@ func SameImpressionCost(
 				max_user_num = user_num_counter
 			}
 		}
-		S[max_user] = 1
+		S[max_user] = diff.SeedInfoF // 1
 	}
 
-	var info_num int
-
-	info_num = 2
+	var info_num diff.SeedInfo
+	info_num = diff.SeedInfoT // 2
 
 	file, err := os.Create("SameImporessionCost.csv")
 	if err != nil {
@@ -118,9 +117,9 @@ func SameImpressionCostInfl(
 	net network.Network,
 	nonUseList []int,
 	probMap diff.UserProbTable,
-	pop [2]int,
-	interestList [][]int,
-	assumList [][]int,
+	pop diff.PopList,
+	interestList diff.InterestList,
+	assumList diff.AssumList,
 	OnlyInfler bool,
 	exit_f bool,
 	r *rand.Rand,
@@ -129,8 +128,8 @@ func SameImpressionCostInfl(
 	var n int = net.N
 	var result float64
 
-	S := make([]int, net.N)
-	S_test := make([]int, net.N)
+	S := make([]diff.SeedInfo, net.N)
+	S_test := make([]diff.SeedInfo, net.N)
 	if exit_f {
 		max_user := 0 //最もフォロワ数が多いユーザ名
 		max_user_num := 0
@@ -147,12 +146,11 @@ func SameImpressionCostInfl(
 				max_user_num = user_num_counter
 			}
 		}
-		S[max_user] = 1
+		S[max_user] = diff.SeedInfoF // 1
 	}
 
-	var info_num int
-
-	info_num = 2
+	var info_num diff.SeedInfo
+	info_num = diff.SeedInfoT // 2
 
 	file, err := os.Create("SameImporessionCost.csv")
 	if err != nil {

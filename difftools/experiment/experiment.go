@@ -10,14 +10,56 @@ import (
 	"time"
 )
 
+func FindMostFollowedUser(net network.Network) int {
+	maxF := net.Followers[0]
+	maxI := 0
+	// iterate 1 to (N-1)
+	for j := range net.N - 1 {
+		i := j + 1
+		f := net.Followers[i]
+		if maxF < f {
+			maxF = f
+			maxI = i
+		}
+	}
+	return maxI
+}
+
+func UsersToSeedSet(users []int, N int, info diff.SeedInfo) []diff.SeedInfo {
+	seedSet := make([]diff.SeedInfo, N)
+	for _, i := range users {
+		seedSet[i] = info
+	}
+	return seedSet
+}
+
+// 複数ユーザの場合
+//
+// フォロワー数が、nFollowersFrom ~ nFollowersTo の範囲のノードから、k個飛ばしで選択する
+func ChooseMultipleUsers(net network.Network, nFollowersFrom int, nFollowersTo int, k int) []int {
+	c := 0
+	var choosen []int
+	for user := range net.N {
+		deg := net.Followers[user]
+		if deg >= nFollowersFrom && deg <= nFollowersTo {
+			if c%k == 0 {
+				choosen = append(choosen, user)
+			}
+			c++
+		}
+	}
+	return choosen
+}
+
+// return:  シード情報配列, シードを与えられたユーザー列, 最大フォロワーユーザー
 func MakeSeedSetFString2(
 	// adj [][]int, nNodes int,
 	net network.Network,
 	S_f_type int,
-) ([]int, []int, int) {
+) ([]diff.SeedInfo, []int, int) {
 	// ユーザの初期状態
 	// 偽情報の発信源の変数
-	SeedSet_F_strong2 := make([]int, net.N)
+	SeedSet_F_strong2 := make([]diff.SeedInfo, net.N)
 	// 虚偽情報の発信源が与えられたユーザーIDのリスト
 	// 虚偽情報の発信源を選択されないようにする(単一情報で)
 	// 単一情報用に複数情報で偽情報の発信源が発信源にならないように
@@ -86,29 +128,31 @@ func ComputeMaximizationDP(
 	// adj [][]int,
 	// nNodes int,
 	net network.Network,
-	interestList [][]int,
-	assumList [][]int,
+	interestList diff.InterestList,
+	assumList diff.AssumList,
 	probTable diff.UserProbTable,
 	user_weight float64,
 	capacity float64,
-	use_kaiki bool,
-	use_user bool,
-	use_infl bool,
-	use_follower bool,
+	// use_kaiki bool,
+	// use_user bool,
+	// use_follower bool,
+	// use_infl bool,
+	costFunc opt.CostFunc,
 	nick int,
 	S_f_type int,
 	only_last bool,
 	r *rand.Rand,
-) ([]int, [2]int) {
+) ([]diff.SeedInfo, diff.PopList) {
 	// var n int = 50
 	// var seesd int64 = 1
 	// var K_F int = 5
 	// var K_T int = 10
 	// var sample_size int = 1000
 	//初期化
-	var pop_list [2]int
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	pop_list := diff.MakePopList(diff.PopHigh, diff.PopHigh)
+	// var pop_list [2]int
+	// pop_list[0] = diff.PopHigh
+	// pop_list[1] = diff.PopHigh
 
 	// fmt.Println(string(bytes))
 
@@ -223,33 +267,43 @@ func ComputeMaximizationDP(
 			pop_list,
 			interestList,
 			assumList,
-			infler_num,
+			// infler_num,
 			true,
 			capacity,
 			mostFollowedUser,
 			true,
 			user_weight,
-			use_kaiki,
-			use_follower,
+			// use_kaiki,
+			// use_follower,
+			costFunc,
 			nick,
 			usersFSeeded,
-			use_user,
-			use_infl,
+			// use_user,
+			// use_infl,
 			r,
 		)
 		fmt.Println("DP_time:", time.Since(s))
 
 		// DP_ans := DP_user_infl.Users
 		//コストの算出
-		for j := 0; j < len(DP_ans); j++ {
-			if use_infl {
+		for j := range DP_ans {
+			switch costFunc {
+			case opt.CostInfluence:
 				cost_sum += opt.Cal_cost_infl_int(net, DP_ans[j], probTable, pop_list, interestList, assumList)
-			} else if use_follower {
+			case opt.CostFollower:
 				cost_sum += opt.Cal_cost_follower_int(
 					user_weight, 1-user_weight, net, DP_ans[j], mostFollowedUser)
-			} else {
+			default:
 				cost_sum += opt.Cal_cost_infl_int(net, DP_ans[j], probTable, pop_list, interestList, assumList)
 			}
+			// if use_infl {
+			// 	cost_sum += opt.Cal_cost_infl_int(net, DP_ans[j], probTable, pop_list, interestList, assumList)
+			// } else if use_follower {
+			// 	cost_sum += opt.Cal_cost_follower_int(
+			// 		user_weight, 1-user_weight, net, DP_ans[j], mostFollowedUser)
+			// } else {
+			// 	cost_sum += opt.Cal_cost_infl_int(net, DP_ans[j], probTable, pop_list, interestList, assumList)
+			// }
 		}
 		DP_ans2 := make([][]int, 0)
 		DP_ans2 = append(DP_ans2, DP_ans)
@@ -262,7 +316,7 @@ func ComputeMaximizationDP(
 		// SeedSet_F_strong2[max_user] = 1
 
 		fmt.Println("虚偽情報アリの解", DP_ans, test_DP_ans_v, test_DP_ans_fv)
-		nonF_SeedSet := make([]int, net.N)
+		nonF_SeedSet := make([]diff.SeedInfo, net.N)
 
 		_, test_DP_ans_v, test_DP_ans_fv = opt.SelectedSuppressionMaximum(
 			net,
@@ -275,7 +329,7 @@ func ComputeMaximizationDP(
 	fmt.Println("cost_sum:", cost_sum)
 
 	//単一情報の影響最大化問題の解を求める
-	nonF_SeedSet := make([]int, net.N) //念のため初期化　偽情報の発信源が無いとき用のからのリスト
+	nonF_SeedSet := make([]diff.SeedInfo, net.N) //念のため初期化　偽情報の発信源が無いとき用のからのリスト
 	DP_ans, _ := opt.DP(
 		100,
 		net,
@@ -284,18 +338,19 @@ func ComputeMaximizationDP(
 		pop_list,
 		interestList,
 		assumList,
-		infler_num,
+		// infler_num,
 		true,
 		capacity,
 		mostFollowedUser,
 		true,
 		user_weight,
-		use_kaiki,
-		use_follower,
+		// use_kaiki,
+		// use_follower,
+		costFunc,
 		nick,
 		usersFSeeded,
-		use_user,
-		use_infl,
+		// use_user,
+		// use_infl,
 		r,
 	)
 
@@ -310,7 +365,7 @@ func ComputeMaximizationDP(
 	DP_ans2 := make([][]int, 0)
 	DP_ans2 = append(DP_ans2, DP_ans)
 
-	nonF_SeedSet = make([]int, net.N) //念のため初期化
+	nonF_SeedSet = make([]diff.SeedInfo, net.N) //念のため初期化
 	_, test_DP_ans_v, test_DP_ans_fv := opt.SelectedSuppressionMaximum(
 		net, DP_ans2, nonF_SeedSet, probTable, pop_list, interestList, assumList, r)
 
@@ -331,8 +386,8 @@ func ComputeMaximizationDP(
 func ComputeDP(
 	// adj [][]int,
 	net network.Network,
-	interest_list [][]int,
-	assum_list [][]int,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 	probTable diff.UserProbTable,
 	user_weight float64,
 	capacity float64,
@@ -345,16 +400,17 @@ func ComputeDP(
 	DP_ans_d []int,
 	DP_ans_s []int,
 	r *rand.Rand,
-) ([]int, [2]int) {
+) ([]diff.SeedInfo, diff.PopList) {
 
 	// var n int = 50
 	// var seesd int64 = 1
 	// var K_F int = 5
 	// var K_T int = 10
 	// var sample_size int = 1000
-	var pop_list [2]int
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	var pop_list = diff.MakePopList(diff.PopHigh, diff.PopHigh)
+	// [2]int
+	// pop_list[0] = diff.PopHigh
+	// pop_list[1] = diff.PopHigh
 
 	// fmt.Println(string(bytes))
 
@@ -362,17 +418,17 @@ func ComputeDP(
 
 	// var SeedSet_F []int = diff.Make_seedSet_F(n, 1, seed, adj)
 
-	// var interest_list [][]int = diff.Make_interest_list(n, seed)
+	// var interest_list diff.InterestList = diff.Make_interest_list(n, seed)
 	//
-	// var assum_list [][]int = diff.Make_assum_list(n, seed)
+	// var assum_list diff.AssumList = diff.Make_assum_list(n, seed)
 
 	// var seq [16]float64 = diff.MakeProbability()
 
 	var prob_map diff.UserProbTable = diff.GetUserProbTable()
 
-	SeedSet_F_strong2 := make([]int, net.N) //ユーザの初期状態
-	non_use_list := make([]int, 1)          //虚偽情報の発信源を選択されないようにする(単一情報で)
-	max_user := 0                           //最もフォロワ数が多いユーザ名
+	SeedSet_F_strong2 := make([]diff.SeedInfo, net.N) //ユーザの初期状態
+	non_use_list := make([]int, 1)                    //虚偽情報の発信源を選択されないようにする(単一情報で)
+	max_user := 0                                     //最もフォロワ数が多いユーザ名
 
 	//虚偽情報の発信源を定義
 	switch S_f_type {
@@ -453,7 +509,7 @@ func ComputeDP(
 
 		// DP_ans := DP_user_infl.Users
 
-		for j := 0; j < len(DP_ans_d); j++ {
+		for j := range DP_ans_d {
 			cost_sum += opt.Cal_cost_infl_int(net, DP_ans_d[j], prob_map, pop_list, interest_list, assum_list)
 		}
 		DP_ans2 := make([][]int, 0)
@@ -466,7 +522,7 @@ func ComputeDP(
 		// SeedSet_F_strong2[max_user] = 1
 
 		fmt.Println("虚偽情報アリの解", DP_ans_d, test_DP_ans_v, test_DP_ans_fv)
-		nonF_SeedSet := make([]int, net.N)
+		nonF_SeedSet := make([]diff.SeedInfo, net.N)
 
 		_, test_DP_ans_v, test_DP_ans_fv = opt.SelectedSuppressionMaximum(
 			net, DP_ans2, nonF_SeedSet, prob_map, pop_list, interest_list, assum_list, r)
@@ -476,7 +532,7 @@ func ComputeDP(
 
 	// fmt.Println(greedy_ans_v)
 	fmt.Println("cost_sum:", cost_sum)
-	nonF_SeedSet := make([]int, net.N) //念のため初期化
+	nonF_SeedSet := make([]diff.SeedInfo, net.N) //念のため初期化
 
 	fmt.Println("DP_time:", time.Since(s))
 
@@ -490,7 +546,7 @@ func ComputeDP(
 	DP_ans2 := make([][]int, 0)
 	DP_ans2 = append(DP_ans2, DP_ans_s)
 
-	nonF_SeedSet = make([]int, net.N) //念のため初期化
+	nonF_SeedSet = make([]diff.SeedInfo, net.N) //念のため初期化
 	_, test_DP_ans_v, test_DP_ans_fv := opt.SelectedSuppressionMaximum(
 		net, DP_ans2, nonF_SeedSet, prob_map, pop_list, interest_list, assum_list, r)
 
@@ -607,16 +663,14 @@ func SimSubmod(
 	sample_size int,
 	// adj [][]int,
 	net network.Network,
-	pop_list [2]int, interest_list [][]int,
-	assum_list [][]int, SeedSet_F []int,
+	pop_list diff.PopList, interest_list diff.InterestList,
+	assum_list diff.AssumList, SeedSet_F []diff.SeedInfo,
 	K_T int,
 	prob_map diff.UserProbTable,
 	folder_path string,
 	r *rand.Rand,
-) ([]int, [][]float64) {
-	var S []int
-	var hist [][]float64
-	S, hist = opt.CheckSubmod(
+) ([]diff.SeedInfo, [][]float64) {
+	S, hist := opt.CheckSubmod(
 		K_T, sample_size, net, SeedSet_F, prob_map, pop_list, interest_list, assum_list, folder_path, r)
 
 	return S, hist

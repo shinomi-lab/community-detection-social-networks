@@ -29,9 +29,10 @@ func main() {
 	interestList := diff.MakeInterestList(net.N, r)
 	assumList := diff.MakeAssumList(net.N, r)
 
-	var pop_list [2]int
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	var pop_list = diff.MakePopList(diff.PopHigh, diff.PopHigh)
+	// var pop_list [2]int
+	// pop_list[0] = diff.PopHigh
+	// pop_list[1] = diff.PopHigh
 	prob_map := diff.GetUserProbTable()
 
 	InflTest(net, prob_map, pop_list, interestList, assumList)
@@ -41,11 +42,11 @@ func main() {
 func InflTest(
 	// adj [][]int,
 	net network.Network,
-	prob_map diff.UserProbTable, pop_list [2]int, interest_list [][]int, assum_list [][]int) {
+	prob_map diff.UserProbTable, pop_list diff.PopList, interest_list diff.InterestList, assum_list diff.AssumList) {
 
-	SeedSetF := make([]int, net.N)
-	SeedSetF[2] = 1
-	SeedSetF[0] = 2
+	SeedSetF := make([]diff.SeedInfo, net.N)
+	SeedSetF[2] = diff.SeedInfoF // 1
+	SeedSetF[0] = diff.SeedInfoT // 2
 	// rand.Seed(100)
 	r := rand.New(rand.NewSource(100))
 	hist := opt.RunInflProp(1000, net, SeedSetF, prob_map, pop_list, interest_list, assum_list, r)
@@ -56,11 +57,11 @@ func InflTest(
 func Selected_Suppression_MaximumTest(
 	// adj [][]int,
 	net network.Network,
-	prob_map diff.UserProbTable, pop_list [2]int, interest_list [][]int, assum_list [][]int,
+	prob_map diff.UserProbTable, pop_list diff.PopList, interest_list diff.InterestList, assum_list diff.AssumList,
 	r *rand.Rand,
 ) {
-	SeedSetF := make([]int, net.N)
-	SeedSetF[2] = 1
+	SeedSetF := make([]diff.SeedInfo, net.N)
+	SeedSetF[2] = diff.SeedInfoF // 1
 	greedy_ans := []int{0}
 	greedy_ans2 := make([][]int, 0)
 	greedy_ans2 = append(greedy_ans2, greedy_ans)
@@ -90,9 +91,9 @@ func Selected_Suppression_MaximumTest(
 
 // 	n := len(arr)
 
-// 	var interest_list [][]int = diff.Make_interest_list(n, seed)
+// 	var interest_list diff.InterestList = diff.Make_interest_list(n, seed)
 
-// 	var assum_list [][]int = diff.Make_assum_list(n, seed)
+// 	var assum_list diff.AssumList = diff.Make_assum_list(n, seed)
 // 	var adj [][]int = make([][]int, n)
 
 // 	for i := 0; i < n; i++ {

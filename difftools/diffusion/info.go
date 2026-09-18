@@ -6,30 +6,60 @@ import (
 	"math/rand"
 )
 
-const (
-	InfoType_F  = 0
-	InfoType_T  = 1
-	InfoTypes_n = 2
-)
+type InfoType int
 
 const (
-	SeedInfoF = InfoType_F + 1
-	SeedInfoT = InfoType_T + 1
+	InfoType_F InfoType = 0
+	InfoType_T InfoType = 1
+)
+const InfoTypes_n = 2
+
+var AllInfoTypes = []InfoType{
+	InfoType_F,
+	InfoType_T,
+}
+
+type SeedInfo int
+
+const (
+	SeedInfoF SeedInfo = SeedInfo(InfoType_F + 1)
+	SeedInfoT SeedInfo = SeedInfo(InfoType_T + 1)
 )
 
-func InfoToSeed(info int) int {
-	return info + 1
+func InfoToSeed(info InfoType) SeedInfo {
+	return SeedInfo(info + 1)
+}
+
+func BoolToSeed(b bool) SeedInfo {
+	if b {
+		return SeedInfoT
+	} else {
+		return SeedInfoF
+	}
 }
 
 // var InfoType_F int = 0
 // var InfoType_T int = 1
 // var InfoTypes_n int = 2
+
+type PopType int
+
 const (
-	Pop_low  = 0
-	Pop_high = 1
+	PopLow  PopType = 0
+	PopHigh PopType = 1
 )
 
-// var Pops_n int = 2
+const Pops_n int = 2
+
+type PopList map[InfoType]PopType
+
+func MakePopList(popInfoF PopType, popInfoT PopType) PopList {
+	list := make(PopList, 2)
+	list[InfoType_F] = popInfoF
+	list[InfoType_T] = popInfoT
+	return list
+}
+
 // func make_Info(pop int) {
 // 	var a [InfoTypes_n][pops_n]int
 // }

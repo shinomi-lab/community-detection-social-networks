@@ -9,35 +9,49 @@ import (
 	"sync"
 )
 
-const (
-	Interest_low  int = 0
-	Interest_high int = 1
-	Interests_n   int = 2
-)
+type Interest int
 
 const (
-	Assum_F  int = 0
-	Assum_T  int = 1
-	Assums_n int = 2
+	Interest_low  Interest = 0
+	Interest_high Interest = 1
 )
+const Interests_n int = 2
 
-func MakeInterestList(n int, r *rand.Rand) [][]int {
-	var interestList = make([][]int, n)
+type Assum int
+
+const (
+	Assum_F Assum = 0
+	Assum_T Assum = 1
+)
+const Assums_n int = 2
+
+// [todo] pop or info
+type InterestList map[int]map[PopType]Interest
+
+func MakeInterestList(n int, r *rand.Rand) InterestList {
+	var interestList = make(InterestList, n)
 	for i := range interestList {
-		interestList[i] = make([]int, InfoTypes_n)
-		interestList[i][InfoType_F] = r.Intn(2)
-		interestList[i][InfoType_T] = r.Intn(2)
+		// interestList[i] = make([][]int, InfoTypes_n)
+		// interestList[i][InfoType_F] = r.Intn(2)
+		// interestList[i][InfoType_T] = r.Intn(2)
+		interestList[i] = make(map[PopType]Interest, Pops_n)
+		interestList[i][PopLow] = Interest(r.Intn(Interests_n))
+		interestList[i][PopHigh] = Interest(r.Intn(Interests_n))
 	}
 	return interestList
 }
 
-func MakeAssumList(n int, r *rand.Rand) [][]int {
-	var assumList = make([][]int, n)
-	for i := range assumList {
-		assumList[i] = make([]int, InfoTypes_n)
-		assumList[i][Pop_low] = r.Intn(2)
-		assumList[i][Pop_high] = r.Intn(2)
+// [todo] info or pop
+type AssumList map[int]map[InfoType]Assum
 
+func MakeAssumList(n int, r *rand.Rand) AssumList {
+	var assumList = make(AssumList, n)
+	for i := range assumList {
+		assumList[i] = make(map[InfoType]Assum, InfoTypes_n)
+		// assumList[i][PopLow] = r.Intn(2)
+		// assumList[i][PopHigh] = r.Intn(2)
+		assumList[i][InfoType_F] = Assum(r.Intn(2))
+		assumList[i][InfoType_T] = Assum(r.Intn(2))
 	}
 
 	return assumList
@@ -55,7 +69,7 @@ func makeProbabilities() [16]float64 {
 	return x
 }
 
-type UserProbTable [2][2][2][2]float64
+type UserProbTable map[PopType]map[InfoType]map[Interest]map[Assum]float64
 
 func initProbabilityTable() UserProbTable {
 	prob := makeProbabilities()
@@ -80,22 +94,22 @@ func initProbabilityTable() UserProbTable {
 	prob_0110 := prob[15]
 
 	var t UserProbTable
-	t[Pop_low][InfoType_F][Interest_low][Assum_F] = prob_0000
-	t[Pop_low][InfoType_F][Interest_low][Assum_T] = prob_0001
-	t[Pop_low][InfoType_F][Interest_high][Assum_F] = prob_0010
-	t[Pop_low][InfoType_F][Interest_high][Assum_T] = prob_0011
-	t[Pop_low][InfoType_T][Interest_low][Assum_F] = prob_0100
-	t[Pop_low][InfoType_T][Interest_low][Assum_T] = prob_0101
-	t[Pop_low][InfoType_T][Interest_high][Assum_F] = prob_0110
-	t[Pop_low][InfoType_T][Interest_high][Assum_T] = prob_0111
-	t[Pop_high][InfoType_F][Interest_low][Assum_F] = prob_1000
-	t[Pop_high][InfoType_F][Interest_low][Assum_T] = prob_1001
-	t[Pop_high][InfoType_F][Interest_high][Assum_F] = prob_1010
-	t[Pop_high][InfoType_F][Interest_high][Assum_T] = prob_1011
-	t[Pop_high][InfoType_T][Interest_low][Assum_F] = prob_1100
-	t[Pop_high][InfoType_T][Interest_low][Assum_T] = prob_1101
-	t[Pop_high][InfoType_T][Interest_high][Assum_F] = prob_1110
-	t[Pop_high][InfoType_T][Interest_high][Assum_T] = prob_1111
+	t[PopLow][InfoType_F][Interest_low][Assum_F] = prob_0000
+	t[PopLow][InfoType_F][Interest_low][Assum_T] = prob_0001
+	t[PopLow][InfoType_F][Interest_high][Assum_F] = prob_0010
+	t[PopLow][InfoType_F][Interest_high][Assum_T] = prob_0011
+	t[PopLow][InfoType_T][Interest_low][Assum_F] = prob_0100
+	t[PopLow][InfoType_T][Interest_low][Assum_T] = prob_0101
+	t[PopLow][InfoType_T][Interest_high][Assum_F] = prob_0110
+	t[PopLow][InfoType_T][Interest_high][Assum_T] = prob_0111
+	t[PopHigh][InfoType_F][Interest_low][Assum_F] = prob_1000
+	t[PopHigh][InfoType_F][Interest_low][Assum_T] = prob_1001
+	t[PopHigh][InfoType_F][Interest_high][Assum_F] = prob_1010
+	t[PopHigh][InfoType_F][Interest_high][Assum_T] = prob_1011
+	t[PopHigh][InfoType_T][Interest_low][Assum_F] = prob_1100
+	t[PopHigh][InfoType_T][Interest_low][Assum_T] = prob_1101
+	t[PopHigh][InfoType_T][Interest_high][Assum_F] = prob_1110
+	t[PopHigh][InfoType_T][Interest_high][Assum_T] = prob_1111
 
 	return t
 }

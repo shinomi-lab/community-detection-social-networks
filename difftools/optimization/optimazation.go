@@ -15,11 +15,11 @@ func RunInflProp(
 	sampleSize int,
 	net network.Network,
 	// adj [][]int,
-	seedSet []int,
+	seedSet []diff.SeedInfo,
 	userProbTable diff.UserProbTable,
-	pop [2]int,
-	interestList [][]int,
-	assumList [][]int,
+	pop diff.PopList,
+	interestList diff.InterestList,
+	assumList diff.AssumList,
 	r *rand.Rand,
 ) []float64 {
 	// n := len(adj)

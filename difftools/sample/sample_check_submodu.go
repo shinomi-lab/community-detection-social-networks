@@ -19,16 +19,16 @@ import (
 func partial(N int, adjFilePath string) network.Network {
 	adj, _ := network.ReadAdjMatJson(adjFilePath)
 
-	Adj := make([][]int, N)
+	adjPart := make([][]int, N)
 	for i := 0; i < N; i++ {
-		Adj[i] = make([]int, N)
+		adjPart[i] = make([]int, N)
 		for j := 0; j < N; j++ {
-			Adj[i][j] = adj[i][j]
+			adjPart[i][j] = adj[i][j]
 		}
 	}
-	FollowerNums := network.GetFollowerNums(Adj)
+	FollowerNums := network.GetFollowerNums(adjPart)
 
-	return network.Network{Adj, N, FollowerNums}
+	return network.Network{Adj: adjPart, N: N, Followers: FollowerNums}
 }
 
 func sample1() {
@@ -37,9 +37,13 @@ func sample1() {
 	var K_F int = 5
 	var K_T int = 10
 	var sample_size int = 1000
-	var pop_list [2]int
-	pop_list[0] = diff.Pop_high
-	pop_list[1] = diff.Pop_high
+	var pop_list = diff.MakePopList(
+		// pop_list[0] = diff.PopHigh
+		diff.PopHigh,
+		// pop_list[1] = diff.PopHigh
+		diff.PopHigh,
+	)
+	// [2]int
 
 	fmt.Println(K_T, K_F, diff.InfoType_F, sample_size, pop_list)
 	adjFilePath := "adj_jsonTwitterInteractionUCongress.txt"
@@ -88,7 +92,7 @@ func sample1() {
 	fmt.Println("prob_map")
 	fmt.Println(prob_map)
 
-	SeedSet_F_strong2 := make([]int, net.N)
+	SeedSet_F_strong2 := make([]diff.SeedInfo, net.N)
 	SeedSet_F_strong2[0] = 1
 
 	//pythonのやつと実行結果が違う理由を確かめるために使った部分
@@ -305,12 +309,10 @@ func sample1() {
 
 	file, _ := json.MarshalIndent(pram_data, "", " ")
 	_ = os.WriteFile(folder_path+"/param_json.txt", file, 0644)
-	//test part
-	var S []int
-	var hist [][]float64
-	//
 
-	SeedSet_F_strong := make([]int, net.N)
+	//test part
+
+	SeedSet_F_strong := make([]diff.SeedInfo, net.N)
 	SeedSet_F_strong[0] = 1 //here
 	// SeedSet_Greedy[1] = 1
 	//偽情報の発信源を色々と
@@ -319,7 +321,9 @@ func sample1() {
 	// os.Exit(0)
 
 	sample_size = 1000000
-	S, hist = exp.SimSubmod(
+	// var S []int
+	// var hist [][]float64
+	S, hist := exp.SimSubmod(
 		sample_size, net, pop_list, interest_list, assum_list, SeedSet_F_strong, K_T, prob_map, folder_path, r)
 
 	fmt.Println("End Check_submod")

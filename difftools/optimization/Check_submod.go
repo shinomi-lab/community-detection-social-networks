@@ -20,17 +20,17 @@ func CheckSubmod(
 	sample_size int,
 	// adj [][]int,
 	net network.Network,
-	SeedSet_F []int,
+	SeedSet_F []diff.SeedInfo,
 	prob_map diff.UserProbTable,
-	pop [2]int,
-	interest_list [][]int,
-	assum_list [][]int,
+	pop diff.PopList,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 	folder_path string,
 	r *rand.Rand,
-) ([]int, [][]float64) {
+) ([]diff.SeedInfo, [][]float64) {
 
 	var n int = net.N
-	var S []int = make([]int, n)
+	var S []diff.SeedInfo = make([]diff.SeedInfo, n)
 
 	for i, f := range SeedSet_F {
 		if f > 0 {
@@ -79,21 +79,21 @@ func CheckSubmod(
 		fmt.Println(j, len(sizes))
 		for v := 0; v < loop; v++ {
 
-			var SetA []int
-			var SetB []int
+			var SetA []diff.SeedInfo
+			var SetB []diff.SeedInfo
 
 			Sets := make([][]int, 2)
 			Sets[0] = make([]int, n)
 			Sets[1] = make([]int, n)
 
-			SetA = make([]int, n)
+			SetA = make([]diff.SeedInfo, n)
 			_ = copy(SetA, S)
 			// setA_list := Make_SeedSet_T_Random(SetA, sizes[j], adj)
-			setA_list := Make_SeedSet_T_Strong(SetA, sizes[j], net.Adj, 10)
-			SetB = make([]int, n)
+			setA_list := make_SeedSet_T_Strong(SetA, sizes[j], net.Adj, 10)
+			SetB = make([]diff.SeedInfo, n)
 			_ = copy(SetB, S)
 			// setB_list := Make_SeedSet_T_Random(SetB, sizes[j], adj)
-			setB_list := Make_SeedSet_T_Strong(SetB, sizes[j], net.Adj, 10)
+			setB_list := make_SeedSet_T_Strong(SetB, sizes[j], net.Adj, 10)
 
 			Sets[0] = setA_list
 			Sets[1] = setB_list
@@ -101,17 +101,17 @@ func CheckSubmod(
 			result := make([]float64, 4)
 			// conf := make([]float64, 4)
 
-			var SetAandB []int
-			SetAandB = make([]int, n)
+			var SetAandB []diff.SeedInfo
+			SetAandB = make([]diff.SeedInfo, n)
 			_ = copy(SetAandB, S)
 			append_seedset_T(SetAandB, Set_Multi(setA_list, setB_list))
 
-			var SetAorB []int
-			SetAorB = make([]int, n)
+			var SetAorB []diff.SeedInfo
+			SetAorB = make([]diff.SeedInfo, n)
 			_ = copy(SetAorB, S)
 			append_seedset_T(SetAorB, Set_Sum(setA_list, setB_list))
 
-			Set_use := make([][]int, 4)
+			Set_use := make(map[int][]diff.SeedInfo, 4)
 			Set_use[0] = SetA
 			Set_use[1] = SetB
 			Set_use[2] = SetAandB
@@ -160,15 +160,15 @@ func FocusLoop(
 	loop_n int,
 	list1 []int,
 	list2 []int,
-	SeedSet_F []int,
+	SeedSet_F []diff.SeedInfo,
 	seed int64,
 	sample_size int,
 	// adj [][]int,
 	net network.Network,
 	prob_map diff.UserProbTable,
-	pop [2]int,
-	interest_list [][]int,
-	assum_list [][]int,
+	pop diff.PopList,
+	interest_list diff.InterestList,
+	assum_list diff.AssumList,
 	folder_path string,
 ) {
 
@@ -178,7 +178,7 @@ func FocusLoop(
 	// now := time.Now()
 
 	n := net.N
-	SetA := make([]int, n)
+	SetA := make([]diff.SeedInfo, n)
 	_ = copy(SetA, SeedSet_F)
 
 	for _, n := range list1 { //多分appendSeedsetTでやれる
@@ -189,7 +189,7 @@ func FocusLoop(
 		}
 	}
 
-	SetB := make([]int, n)
+	SetB := make([]diff.SeedInfo, n)
 	_ = copy(SetB, SeedSet_F)
 
 	for _, n := range list2 {
@@ -201,16 +201,16 @@ func FocusLoop(
 	}
 
 	// var SetAandB []int
-	SetAandB := make([]int, n)
+	SetAandB := make([]diff.SeedInfo, n)
 	_ = copy(SetAandB, SeedSet_F)
 	append_seedset_T(SetAandB, Set_Multi(list1, list2))
 
 	// var SetAorB []int
-	SetAorB := make([]int, n)
+	SetAorB := make([]diff.SeedInfo, n)
 	_ = copy(SetAorB, SeedSet_F)
 	append_seedset_T(SetAorB, Set_Sum(list1, list2))
 
-	Set_use := make([][]int, 4)
+	Set_use := make(map[int][]diff.SeedInfo, 4)
 	Set_use[0] = SetA
 	Set_use[1] = SetB
 	Set_use[2] = SetAandB
@@ -300,7 +300,7 @@ type Node_power struct {
 	power    int //次数
 }
 
-func Make_SeedSet_T_Strong(Su []int, k int, adj [][]int, size int) []int {
+func make_SeedSet_T_Strong(Su []diff.SeedInfo, k int, adj [][]int, size int) []int {
 	n := len(Su)
 	var sets []int
 	Set := make([]Node_power, size)
@@ -338,7 +338,7 @@ func Make_SeedSet_T_Strong(Su []int, k int, adj [][]int, size int) []int {
 	return sets
 }
 
-func append_seedset_T(Su []int, seedset_t_list []int) {
+func append_seedset_T(Su []diff.SeedInfo, seedset_t_list []int) {
 	for _, i := range seedset_t_list {
 		Su[i] = 2
 	}

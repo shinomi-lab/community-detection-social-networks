@@ -5,6 +5,7 @@ import (
 	diff "difftools/diffusion"
 	exp "difftools/experiment"
 	"difftools/network"
+	opt "difftools/optimization"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -19,15 +20,16 @@ import (
 // ---------------------------------------------------------
 
 type GlobalSettings struct {
-	AdjFilePath       string  `json:"adj_file_path"`
-	SFType            int     `json:"s_f_type"`
-	UseUser           bool    `json:"use_user"`
-	UseInfl           bool    `json:"use_infl"`
-	UseCongress       bool    `json:"use_congress"`
-	UseKaiki          bool    `json:"use_kaiki"`
-	UseFollower       bool    `json:"use_follower"`
-	NumPickUsers      int     `json:"num_pick_users"`
-	UserWeightInitial float64 `json:"user_weight_initial"`
+	AdjFilePath string `json:"adj_file_path"`
+	SFType      int    `json:"s_f_type"`
+	// UseUser           bool    `json:"use_user"`
+	// UseInfl           bool    `json:"use_infl"`
+	UseCongress bool `json:"use_congress"`
+	// UseKaiki          bool    `json:"use_kaiki"`
+	// UseFollower       bool    `json:"use_follower"`
+	CostFunc          opt.CostFunc `json:"cost_func"`
+	NumPickUsers      int          `json:"num_pick_users"`
+	UserWeightInitial float64      `json:"user_weight_initial"`
 }
 
 type Task struct {
@@ -153,10 +155,11 @@ func runExperimentBatch(filePath string) {
 			probTable,
 			settings.UserWeightInitial,
 			task.Capacity, // JSONの計算済み値
-			settings.UseKaiki,
-			settings.UseUser,
-			settings.UseInfl,
-			settings.UseFollower,
+			settings.CostFunc,
+			// settings.UseKaiki,
+			// settings.UseUser,
+			// settings.UseInfl,
+			// settings.UseFollower,
 			1, // 元コードの固定値
 			settings.SFType,
 			false, // 元コードの固定値

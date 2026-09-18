@@ -15,13 +15,14 @@ func SameImpressionCostFollower(
 	sample_size int,
 	// adj [][]int,
 	net network.Network,
-	SeedSet_F []int, prob_map diff.UserProbTable,
-	pop [2]int, interest_list [][]int, assum_list [][]int,
+	SeedSet_F []diff.SeedInfo,
+	prob_map diff.UserProbTable,
+	pop diff.PopList, interest_list diff.InterestList, assum_list diff.AssumList,
 	under int, upper int, exit_f bool, use_cost_infl bool,
 	r *rand.Rand,
 ) {
 	fmt.Println("calling SameImpressionCostFollower")
-	zerolist := make([]int, net.N)
+	zerolist := make([]diff.SeedInfo, net.N)
 	sameFollowerList := CallKumiawase(net, under, upper, SeedSet_F, true, prob_map, pop, interest_list, assum_list, use_cost_infl)
 
 	fmt.Println("start selected suprresion return list", sameFollowerList)
