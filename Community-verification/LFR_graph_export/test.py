@@ -61,8 +61,19 @@ def write_graph(G: nx.DiGraph, p: Path):
         for node in comm_nodes:
             node_to_community[int(node)] = comm_id
 
-    with open(p.joinpath("LFR_communities_adj.json"), "w", encoding="utf-8") as f:
+    with open(p.joinpath("LFR_communities.txt"), "w", encoding="utf-8") as f:
         json.dump(node_to_community, f, indent=2)
+
+    # 3. 隣接関係（adj.json）の作成と保存
+    # G.adj または g.successors を使って各ノードからの接続先を記録（隣接リスト形式）
+    # adj[u][v] = 1 のように参照可能です
+    adj: dict[int, dict[int, int]] = {
+        int(u): {int(v): 1 for v in G.successors(u)}
+        for u in G.nodes()
+    }
+
+    with open(p.joinpath("LFR_adj.json"), "w", encoding="utf-8") as f:
+        json.dump(adj, f)
 
     print(f"保存完了: コミュニティ数 = {len(communities)}, ノード数 = {G.number_of_nodes()}, エッジ数 = {G.number_of_edges()}")
 
@@ -73,18 +84,34 @@ def read_graph(p: Path) -> tuple[nx.DiGraph, dict[int, int]]:
     G = nx.read_edgelist(p.joinpath("LFR_edgelist.txt"), nodetype=int, create_using=nx.DiGraph)
 
     # コミュニティJSONの読み込み
-    with open(p.joinpath("LFR_communities_adj.json"), "r", encoding="utf-8") as f:
+    with open(p.joinpath("LFR_communities.txt"), "r", encoding="utf-8") as f:
         data = json.load(f)
         node_to_community = {int(k): v for k, v in data.items()}
 
-    # 検証: 有向グラフであること & ノードの所属確認
+    # 隣接関係JSONの読み込み
+    with open(p.joinpath("LFR_adj.json"), "r", encoding="utf-8") as f:
+        adj_raw = json.load(f)
+        # キーを int に変換
+        adj = {int(u): {int(v): weight for v, weight in neighbors.items()} for u, neighbors in adj_raw.items()}
+
+    # 検証 1: 有向グラフであること
     assert isinstance(G, nx.DiGraph), "有向グラフとして読み込まれていません"
+    
+    # 検証 2: コミュニティ割り当ての整合性
     assert len(G.nodes()) == len(node_to_community)
     for node in G.nodes():
         assert node in node_to_community
 
-    print("読み込み・有向グラフ検証完了！")
-    return G, node_to_community
+    # 検証 3: 隣接行列（adj.json）とグラフのエッジが完全一致するか
+    for u in G.nodes():
+        # グラフ上の出エッジ先ノード集合
+        graph_neighbors = set(G.successors(u))
+        # adj.json に記録された接続先ノード集合
+        adj_neighbors = set(adj.get(u, {}).keys())
+        assert graph_neighbors == adj_neighbors, f"ノード {u} の隣接関係が一致しません"
+
+    print("読み込み・全データ（エッジ / コミュニティ / 隣接情報）の整合性検証完了！")
+    return G, node_to_community, adj
 
 
 if __name__ == "__main__":
@@ -98,4 +125,4 @@ if __name__ == "__main__":
     write_graph(digraph, dir_path)
 
     # 読み込みと検証
-    loaded_digraph, loaded_communities = read_graph(dir_path)
+    loaded_digraph, loaded_communities, loaded_adj = read_graph(dir_path)
