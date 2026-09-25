@@ -577,7 +577,8 @@ func DP(
 			// } else {
 			// 	result = dist[diff.InfoType_F]
 			// }
-			result := dist[info_num]
+			result := dist[diff.BoolToInfo(countTrue)]
+
 			//resultをdp[i][j].users+onlyiflerlist[i]での拡散にする複数回同じ拡散を調べたくないけど，一旦後回し？
 			if dp[i][j].Infl < result {
 

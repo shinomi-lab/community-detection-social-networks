@@ -21,11 +21,11 @@ func RunInflProp(
 	interestList diff.InterestList,
 	assumList diff.AssumList,
 	r *rand.Rand,
-) []float64 {
+) map[diff.InfoType]float64 {
 	// n := len(adj)
 
 	// dist := make([][]int, diff.InfoTypes_n)
-	ans := make([]float64, diff.InfoTypes_n)
+	ans := make(map[diff.InfoType]float64, diff.InfoTypes_n)
 
 	for i := 0; i < sampleSize; i++ {
 		var dist = diff.Diffuse(net, seedSet, userProbTable, pop, interestList, assumList, r) //-1 is correct?

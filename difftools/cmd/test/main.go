@@ -18,34 +18,43 @@ func main() {
 	mainDir := filepath.Dir(filename)
 
 	r := rand.New(rand.NewSource(int64(100)))
-
 	net := network.ReadJson(filepath.Join(mainDir, "sample_adj.json"))
-	interestList := diff.MakeInterestList(net.N, r)
-	assumList := diff.MakeAssumList(net.N, r)
-	probTable := diff.GetUserProbTable()
+
+	// 偽情報発信源
+	falseUsers := []int{}
+
+	// 影響関数計算用
+	sampleSize := 1000
+
+	// DP用
 	nick := 1
-
-	costFunc := opt.CostDefault
 	capacity := 500.0
-	userWeight := 1.0
 
-	// S_f_type := 2
-	// SeedSet, usersFSeeded, mostFollowedUser := exp.MakeSeedSetFString2(net, S_f_type)
-	nFollowersFrom := 21
-	nFollowersTo := 31
-	skip := 20
-	usersFSeeded := exp.ChooseMultipleUsers(net, nFollowersFrom, nFollowersTo, skip)
-	seedSet := exp.UsersToSeedSet(usersFSeeded, net, diff.SeedInfoF)
+	// 制約関数依存
+	costFunc := opt.CostUser
+	userWeight := 1.0
 	mostFollowedUser := 0 // exp.FindMostFollowedUser(net)
 
+	// nFollowersFrom := 21
+	// nFollowersTo := 31
+	// skip := 20
+	// falseUsers := exp.ChooseMultipleUsers(net, nFollowersFrom, nFollowersTo, skip)
+
+	// ここから共通処理
 	popList := make(diff.PopList, diff.Pops_n)
 	popList[diff.InfoType_F] = diff.PopHigh
 	popList[diff.InfoType_T] = diff.PopHigh
 
-	DP_ans, _ := opt.DP(
-		100,
+	interestList := diff.MakeInterestList(net.N, r)
+	assumList := diff.MakeAssumList(net.N, r)
+	probTable := diff.GetUserProbTable()
+
+	falseSeedSet := exp.UsersToSeedSet(falseUsers, net, diff.SeedInfoF)
+
+	trueUsers, _ := opt.DP(
+		sampleSize,
 		net,
-		seedSet,
+		falseSeedSet,
 		probTable,
 		popList,
 		interestList,
@@ -57,20 +66,13 @@ func main() {
 		userWeight,
 		costFunc,
 		nick,
-		usersFSeeded,
+		falseUsers,
 		r)
 
-	DP_ans2 := make([][]int, 0)
-	DP_ans2 = append(DP_ans2, DP_ans)
-	_, test_DP_ans_v, test_DP_ans_fv := opt.SelectedSuppressionMaximum(
-		net,
-		DP_ans2,
-		[]diff.SeedInfo{},
-		probTable,
-		popList,
-		interestList,
-		assumList,
-		r)
-
-	println(test_DP_ans_v, test_DP_ans_fv)
+	testTrueSeedSet := exp.UsersToSeedSet(trueUsers, net, diff.SeedInfoT)
+	dist := opt.RunInflProp(
+		sampleSize, net, testTrueSeedSet, probTable, popList, interestList, assumList, r,
+	)
+	// test_DP_ans_tv, test_DP_ans_fv
+	println(dist[diff.InfoType_T], dist[diff.InfoType_F])
 }

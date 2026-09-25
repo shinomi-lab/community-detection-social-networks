@@ -38,6 +38,18 @@ func BoolToSeed(b bool) SeedInfo {
 	}
 }
 
+func SeedToInfo(info SeedInfo) InfoType {
+	return InfoType(info - 1)
+}
+
+func BoolToInfo(b bool) InfoType {
+	if b {
+		return InfoType_T
+	} else {
+		return InfoType_F
+	}
+}
+
 // var InfoType_F int = 0
 // var InfoType_T int = 1
 // var InfoTypes_n int = 2
