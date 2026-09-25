@@ -18,7 +18,7 @@ func main() {
 	mainDir := filepath.Dir(filename)
 
 	r := rand.New(rand.NewSource(int64(100)))
-	net := network.ReadJson(filepath.Join(mainDir, "sample_adj.json"))
+	net := network.ReadAdjJson(filepath.Join(mainDir, "sample_adj.json"))
 
 	// 偽情報発信源
 	falseUsers := []int{}

@@ -133,7 +133,7 @@ func main() {
 		r := rand.New(rand.NewSource(int64(i)))
 
 		adjFilePath := "adj_jsonTwitterInteractionUCongress.txt"
-		net := network.ReadJson(adjFilePath)
+		net := network.ReadAdjJson(adjFilePath)
 		interestList := diff.MakeInterestList(net.N, r)
 		assumList := diff.MakeAssumList(net.N, r)
 		probTable := diff.GetUserProbTable()

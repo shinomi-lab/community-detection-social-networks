@@ -143,7 +143,7 @@ func main() {
 
 	adjFilePath := "Graphs/adj_json1000node.txt"
 	adjFilePath = "adj_jsonTwitterInteractionUCongress.txt"
-	net := network.ReadJson(adjFilePath)
+	net := network.ReadAdjJson(adjFilePath)
 	interestList := diff.MakeInterestList(net.N, r)
 	assumList := diff.MakeAssumList(net.N, r)
 	// adj, interest_list, assum_list := Make_adj_interest_assum(adjFilePath, seed)

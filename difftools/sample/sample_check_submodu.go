@@ -17,13 +17,13 @@ import (
 )
 
 func partial(N int, adjFilePath string) network.Network {
-	adj, _ := network.ReadAdjMatJson(adjFilePath)
+	net := network.ReadAdjJson(adjFilePath)
 
 	adjPart := make([][]int, N)
-	for i := 0; i < N; i++ {
+	for i := range N {
 		adjPart[i] = make([]int, N)
-		for j := 0; j < N; j++ {
-			adjPart[i][j] = adj[i][j]
+		for j := range N {
+			adjPart[i][j] = net.Adj[i][j]
 		}
 	}
 	FollowerNums := network.GetFollowerNums(adjPart)

@@ -135,7 +135,7 @@ func runExperimentBatch(filePath string) {
 
 		// 2. データの生成 (Make_adj...)
 		// adj, interest_list, assum_list := Make_adj_interest_assum(settings.AdjFilePath, int64(task.Seed))
-		net := network.ReadJson(settings.AdjFilePath)
+		net := network.ReadAdjJson(settings.AdjFilePath)
 		interestList := diff.MakeInterestList(net.N, r)
 		assumList := diff.MakeAssumList(net.N, r)
 		probTable := diff.GetUserProbTable()

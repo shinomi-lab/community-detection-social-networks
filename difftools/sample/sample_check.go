@@ -26,7 +26,7 @@ func Make_adj_interest_assum(adjFilePath string, r *rand.Rand) (network.Network,
 
 	// // fmt.Println(arr[0][1])
 
-	net := network.ReadJson(adjFilePath)
+	net := network.ReadAdjJson(adjFilePath)
 	n := net.N
 
 	var interest_list diff.InterestList = diff.MakeInterestList(n, r)

@@ -38,7 +38,7 @@ func main() {
 		// adjFilePath = "adj_json_egoTwitter_kirinuki.txt"
 		// adj, interest_list, assum_list := exp.Make_adj_interest_assum(adjFilePath, seed)
 
-		net := network.ReadJson(adjFilePath)
+		net := network.ReadAdjJson(adjFilePath)
 		interestList := diff.MakeInterestList(net.N, r)
 		assumList := diff.MakeAssumList(net.N, r)
 		probTable := diff.GetUserProbTable()
