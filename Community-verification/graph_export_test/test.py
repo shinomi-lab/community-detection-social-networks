@@ -54,7 +54,7 @@ def read_graph(p: Path):
 
 
 if __name__ == "__main__":
-    dir = Path(os.getcwd()).parent.joinpath("/Users/kaoriogawa/研究/community-detection-social-networks-dev/difftools/network")
+    dir = Path(os.getcwd()).parent.joinpath("difftools/network")
     print(dir)
     write_graph(dir)
     read_graph(dir)
