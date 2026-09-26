@@ -26,8 +26,8 @@ func TestGetNumFollowersList(t *testing.T) {
 }
 
 func TestReadEdgeList(t *testing.T) {
-	net1 := network.ReadEdgelist("edgelist.txt")
-	net2 := network.ReadAdjJson("adj.json")
+	net1 := network.ReadEdgelist("testdata/edgelist.txt")
+	net2 := network.ReadAdjJson("testdata/adj.json")
 
 	assert.Equal(t, net1.N, net2.N)
 	for i := range net1.N {
@@ -39,8 +39,8 @@ func TestReadEdgeList(t *testing.T) {
 }
 
 func TestReadEdgeListGz(t *testing.T) {
-	net1 := network.ReadEdgelist("edgelist.txt")
-	net2 := network.ReadEdgelist("edgelist.txt.gz")
+	net1 := network.ReadEdgelist("testdata/edgelist.txt")
+	net2 := network.ReadEdgelist("testdata/edgelist.txt.gz")
 
 	assert.Equal(t, net1.N, net2.N)
 	for i := range net1.N {

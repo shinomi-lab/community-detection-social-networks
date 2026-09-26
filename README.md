@@ -1,7 +1,21 @@
-﻿# Go_diffusion_suppression
+﻿# Community-verification
 
-## 実行ファイル（コマンド）の追加と実行
-### コマンドの追加
+## Python環境の構築（初回のみ）
+```
+cd Community-verification
+uv sync
+```
+
+## Pythonスクリプトの実行
+例：foo/bar.py
+```
+cd Community-verification
+uv run python foo/bar.py
+```
+
+# difftools
+
+## Go言語での実行用プログラムの作成
 1. [./difftools/cmd](./difftools/cmd) 直下に適当なコマンド名（空白文字は避ける）のフォルダを追加する。
 2. 追加したフォルダ直下に `main.go` ファイルを作成する。
 3. `main.go` に以下の内容を記述する。
@@ -12,29 +26,8 @@
    }
    ``` 
 
-### コマンドの実行
+## プログラムの実行
 ```shell
 cd difftools
 go run ./cmd/[コマンド名]
 ```
-
-## 要確認
-- [ ] `optimization.Cal_cost_infl_int`および`optimization.cal_cost_infl`の計算が固定乱数シードで行われている。
-
-## リファクタリング
-### 2026/9/16
-#### ディレクトリ
-- Goプロジェクトのルートを[./difftools](./difftools)に変更
-- [./difftools/sample](./difftools/sample)のうち、プロジェクトと無関係のものを[./sample](./sample)に隔離
-
-#### difftools
-- 同一ロジックの共通化
-- `main`関数ファイルのコマンド化（`difftools/cmd`配下）
-- 乱数生成器のオブジェクトの明示・共通化（ver 1.18標準）
-- 以下を満たすシード配列用の定数を定義
-    - `SeedInfoF == InfoType_F + 1`
-    - `SeedInfoT == InfoType_T + 1`
-- グラフ情報を`Network`構造体に一元化
-  - `Adj [][]int`: 隣接行列
-  - `N`: ノード数 (`== len(Adj)`)
-  - `FollowerNums`: 各ノードのフォロワー数 (`optimzation.FolowerSize`関数の廃止)
