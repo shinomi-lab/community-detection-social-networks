@@ -5,6 +5,9 @@
         },
         {
             "path": "Community-verification"
+        },
+        {
+            "path": "data"
         }
     ]
 }

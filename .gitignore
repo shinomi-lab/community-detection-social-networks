@@ -1,3 +1,4 @@
 .DS_Store
 archive
 ~$*.xlsx
+__pycache__/
