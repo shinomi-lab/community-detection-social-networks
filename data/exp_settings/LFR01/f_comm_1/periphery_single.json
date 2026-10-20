@@ -1,0 +1,11 @@
+{
+  "graph_path": "data/LFR01/edgelist.txt.gz",
+  "scenario_name": "periphery_single",
+  "true_community_id": 2,
+  "true_seed_users": [
+    4539
+  ],
+  "false_seed_users": [
+    3715
+  ]
+}
