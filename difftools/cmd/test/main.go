@@ -31,9 +31,10 @@ func main() {
 	capacity := 500.0
 
 	// 制約関数依存
-	costFunc := opt.CostUser
-	userWeight := 1.0
-	mostFollowedUser := 0 // exp.FindMostFollowedUser(net)
+	costFunc := opt.CostUser{}
+	// userWeight := 1.0
+	// exp.FindMostFollowedUser(net)
+	// mostFollowedUser := 0
 
 	// nFollowersFrom := 21
 	// nFollowersTo := 31
@@ -61,9 +62,9 @@ func main() {
 		assumList,
 		true,
 		capacity,
-		mostFollowedUser,
 		true,
-		userWeight,
+		// mostFollowedUser,
+		// userWeight,
 		costFunc,
 		nick,
 		falseUsers,

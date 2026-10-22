@@ -153,7 +153,7 @@ func runExperimentBatch(filePath string) {
 			interestList,
 			assumList,
 			probTable,
-			settings.UserWeightInitial,
+			// settings.UserWeightInitial,
 			task.Capacity, // JSONの計算済み値
 			settings.CostFunc,
 			// settings.UseKaiki,

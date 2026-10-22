@@ -131,7 +131,7 @@ func ComputeMaximizationDP(
 	interestList diff.InterestList,
 	assumList diff.AssumList,
 	probTable diff.UserProbTable,
-	user_weight float64,
+	// user_weight float64,
 	capacity float64,
 	// use_kaiki bool,
 	// use_user bool,
@@ -225,7 +225,7 @@ func ComputeMaximizationDP(
 	// 	}
 	// }
 
-	SeedSet, usersFSeeded, mostFollowedUser := MakeSeedSetFString2(net, S_f_type)
+	SeedSet, usersFSeeded, _ := MakeSeedSetFString2(net, S_f_type)
 
 	//人数を流動的にして拡散を調べている
 	//	総フォロワー数を固定できていない
@@ -270,9 +270,9 @@ func ComputeMaximizationDP(
 			// infler_num,
 			true,
 			capacity,
-			mostFollowedUser,
+			// mostFollowedUser,
 			true,
-			user_weight,
+			// user_weight,
 			// use_kaiki,
 			// use_follower,
 			costFunc,
@@ -287,12 +287,12 @@ func ComputeMaximizationDP(
 		// DP_ans := DP_user_infl.Users
 		//コストの算出
 		for j := range DP_ans {
-			switch costFunc {
+			switch costFunc.(type) {
 			case opt.CostInfluence:
 				cost_sum += opt.Cal_cost_infl_int(net, DP_ans[j], probTable, pop_list, interestList, assumList)
 			case opt.CostFollower:
-				cost_sum += opt.Cal_cost_follower_int(
-					user_weight, 1-user_weight, net, DP_ans[j], mostFollowedUser)
+				// cost_sum += opt.Cal_cost_follower_int(user_weight, 1-user_weight, net, DP_ans[j], mostFollowedUser)
+				cost_sum += net.Followers[DP_ans[j]]
 			default:
 				cost_sum += opt.Cal_cost_infl_int(net, DP_ans[j], probTable, pop_list, interestList, assumList)
 			}
@@ -341,9 +341,9 @@ func ComputeMaximizationDP(
 		// infler_num,
 		true,
 		capacity,
-		mostFollowedUser,
+		// mostFollowedUser,
 		true,
-		user_weight,
+		// user_weight,
 		// use_kaiki,
 		// use_follower,
 		costFunc,

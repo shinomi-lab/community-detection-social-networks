@@ -16,7 +16,7 @@ func main() {
 		fmt.Println()
 		fmt.Println()
 		// user_weight := 0.1*float64(i)
-		user_weight := 0.0
+		// user_weight := 0.0
 		// fmt.Println("user_weight",user_weight)
 		fmt.Println("seed", i)
 		r := rand.New(rand.NewSource(int64(i)))
@@ -56,11 +56,11 @@ func main() {
 		// use_infl := true      //コスト：拡散量
 		// use_kaiki := false    //コスト：予想拡散量　使ってない
 		// use_follower := false //コスト：総フォロワー数　使ってない
-		costFunc := optimization.CostInfluence
+		var costFunc optimization.CostFunc = optimization.CostInfluence{}
 
 		S_f_type := 2 //1:単独　2:複数
 		for j := 1.0; j < 5.0; j++ {
-			switch costFunc {
+			switch costFunc.(type) {
 			case optimization.CostInfluence:
 				if use_congress {
 					capacity = j * 100
@@ -91,7 +91,7 @@ func main() {
 				interestList,
 				assumList,
 				probTable,
-				user_weight,
+				// user_weight,
 				capacity,
 				// use_kaiki,
 				// use_user,

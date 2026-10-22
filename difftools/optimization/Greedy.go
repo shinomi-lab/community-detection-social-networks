@@ -4,10 +4,8 @@ package optimization
 
 import (
 	"bufio"
-	"bytes"
 	diff "difftools/diffusion"
 	"difftools/network"
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -386,59 +384,27 @@ func (ui *Users_infl) CopyUsers(users []int) {
 	copy(ui.Users, users)
 }
 
-type CostFunc int
-
-const (
-	CostDefault CostFunc = iota
-	CostKaiki
-	CostUser
-	CostFollower
-	CostInfluence
-)
-
-var costFuncToString = map[CostFunc]string{
-	CostDefault:   "default",
-	CostKaiki:     "kaiki",
-	CostUser:      "user",
-	CostFollower:  "follower",
-	CostInfluence: "influence",
+type CostFunc interface {
+	isCostFunc()
 }
 
-var stringToCostFunc = map[string]CostFunc{
-	"default":   CostDefault,
-	"kaiki":     CostKaiki,
-	"user":      CostUser,
-	"follower":  CostFollower,
-	"influence": CostInfluence,
+type CostDefault struct {
+	UserWeight float64
+	MaxUser    int
 }
-
-func (f CostFunc) String() string {
-	if str, ok := costFuncToString[f]; ok {
-		return str
-	}
-	return "default"
+type CostKaiki struct {
+	UserWeight float64
+	MaxUser    int
 }
+type CostUser struct{}
+type CostFollower struct{}
+type CostInfluence struct{}
 
-func (s CostFunc) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString(`"`)
-	buffer.WriteString(s.String())
-	buffer.WriteString(`"`)
-	return buffer.Bytes(), nil
-}
-
-func (s *CostFunc) UnmarshalJSON(b []byte) error {
-	var str string
-	if err := json.Unmarshal(b, &str); err != nil {
-		return err
-	}
-
-	if val, ok := stringToCostFunc[str]; ok {
-		*s = val
-	} else {
-		*s = CostDefault // 定義外の文字列はCostDefault
-	}
-	return nil
-}
+func (CostDefault) isCostFunc()   {}
+func (CostKaiki) isCostFunc()     {}
+func (CostUser) isCostFunc()      {}
+func (CostFollower) isCostFunc()  {}
+func (CostInfluence) isCostFunc() {}
 
 // countTure: 新情報を扱うかどうか
 //
@@ -457,9 +423,9 @@ func DP(
 	assumList diff.AssumList,
 	countTrue bool,
 	capacity float64,
-	maxUser int,
 	onlyInfler bool,
-	userWeight float64,
+	// maxUser int,
+	// userWeight float64,
 	costFunc CostFunc,
 	nick int,
 	nonUseList []int,
@@ -495,14 +461,14 @@ func DP(
 	// 	costcal = Cal_cost
 	// }
 
-	switch costFunc {
+	switch f := costFunc.(type) {
 	case CostDefault:
 		costInflFunc = func(focusUser int) int {
-			return int(Cal_cost(userWeight, 1-userWeight, net, focusUser, maxUser))
+			return int(Cal_cost(f.UserWeight, 1-f.UserWeight, net, focusUser, f.MaxUser))
 		}
 	case CostKaiki:
 		costInflFunc = func(focusUser int) int {
-			return Cal_cost_kaiki_int(userWeight, 1-userWeight, net, focusUser, maxUser)
+			return Cal_cost_kaiki_int(f.UserWeight, 1-f.UserWeight, net, focusUser, f.MaxUser)
 		}
 	case CostUser:
 		costInflFunc = func(focusUser int) int {
