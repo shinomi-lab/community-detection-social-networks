@@ -35,7 +35,7 @@ type GlobalSettings struct {
 type Task struct {
 	Seed     int64   `json:"seed"`
 	ScaleJ   float64 `json:"scale_j"`
-	Capacity float64 `json:"capacity"`
+	Capacity int     `json:"capacity"`
 }
 
 type ExperimentBatch struct {

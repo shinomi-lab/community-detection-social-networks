@@ -28,7 +28,7 @@ func main() {
 
 	// DP用
 	nick := 1
-	capacity := 500.0
+	capacity := 500
 
 	// 制約関数依存
 	costFunc := opt.CostUser{}

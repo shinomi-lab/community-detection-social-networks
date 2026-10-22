@@ -422,7 +422,8 @@ func DP(
 	interestList diff.InterestList,
 	assumList diff.AssumList,
 	countTrue bool,
-	capacity float64,
+	// capacity float64,
+	capacity int,
 	onlyInfler bool,
 	// maxUser int,
 	// userWeight float64,
@@ -491,7 +492,8 @@ func DP(
 	onlyinfler_num := len(onlyiflerlist)
 
 	n := onlyinfler_num
-	l_list := int(int(capacity)/nick) + 1
+	// l_list := int(int(capacity)/nick) + 1
+	l_list := capacity/nick + 1
 
 	// dp := make([][]float64,n+1) // <- dpは構造体にして拡散量と既に選ばれているユーザ集合を入れる
 	dp := make([][]Users_infl, n+1)

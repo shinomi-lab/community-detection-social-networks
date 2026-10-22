@@ -49,7 +49,8 @@ func main() {
 			exp.CalMaxUsers(net, num_pick_users)
 			// exp.CalMaxUsersFixed(net, num_pick_users)
 		}
-		capacity := 302.0
+		// capacity := 302.0
+		capacity := 302
 		//コスト=拡散量用
 
 		// use_user := false     //コスト：ユーザ
@@ -59,7 +60,7 @@ func main() {
 		var costFunc optimization.CostFunc = optimization.CostInfluence{}
 
 		S_f_type := 2 //1:単独　2:複数
-		for j := 1.0; j < 5.0; j++ {
+		for j := 1; j < 5; j++ {
 			switch costFunc.(type) {
 			case optimization.CostInfluence:
 				if use_congress {
