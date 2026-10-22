@@ -36,6 +36,10 @@ func UsersToSeedSet(users []int, net network.Network, info diff.SeedInfo) []diff
 // 複数ユーザの場合
 //
 // フォロワー数が、nFollowersFrom ~ nFollowersTo の範囲のノードから、k個飛ばしで選択する
+// nFollowersFrom := 21
+// nFollowersTo := 31
+// skip := 20
+// falseUsers := exp.ChooseMultipleUsers(net, nFollowersFrom, nFollowersTo, skip)
 func ChooseMultipleUsers(net network.Network, nFollowersFrom int, nFollowersTo int, k int) []int {
 	c := 0
 	var choosen []int
@@ -226,7 +230,7 @@ func ComputeMaximizationDP(
 	// 	}
 	// }
 
-	SeedSet, usersFSeeded, _ := MakeSeedSetFString2(net, S_f_type)
+	SeedSetF, usersFSeeded, _ := MakeSeedSetFString2(net, S_f_type)
 
 	//人数を流動的にして拡散を調べている
 	//	総フォロワー数を固定できていない
@@ -263,7 +267,7 @@ func ComputeMaximizationDP(
 		DP_ans, _ := opt.DP(
 			100,
 			net,
-			SeedSet,
+			SeedSetF,
 			probTable,
 			pop_list,
 			interestList,
@@ -312,7 +316,7 @@ func ComputeMaximizationDP(
 		// SeedSet_F_strong2[max_user] = 1
 		_, test_DP_ans_v, test_DP_ans_fv := opt.SelectedSuppressionMaximum(
 			net,
-			DP_ans2, SeedSet, probTable, pop_list, interestList, assumList, r)
+			DP_ans2, SeedSetF, probTable, pop_list, interestList, assumList, r)
 		// SeedSet_F_strong2 = make([]int, len(adj))//念のため初期化
 		// SeedSet_F_strong2[max_user] = 1
 
@@ -376,11 +380,11 @@ func ComputeMaximizationDP(
 	fmt.Println("cost_sum:", cost_sum)
 
 	_, test_DP_ans_v, test_DP_ans_fv = opt.SelectedSuppressionMaximum(
-		net, DP_ans2, SeedSet, probTable, pop_list, interestList, assumList, r)
+		net, DP_ans2, SeedSetF, probTable, pop_list, interestList, assumList, r)
 
 	fmt.Println("虚偽情報なしの解をアリに使ってみたら...", test_DP_ans_v, test_DP_ans_fv)
 
-	return SeedSet, pop_list
+	return SeedSetF, pop_list
 }
 
 // use_DP in sample_check_submodu_sub.go
@@ -675,4 +679,67 @@ func SimSubmod(
 		K_T, sample_size, net, SeedSet_F, prob_map, pop_list, interest_list, assum_list, folder_path, r)
 
 	return S, hist
+}
+
+func EvalInfmaxTF(
+	seed int64,
+	// edge list path
+	graphPath string,
+	sampleSize int,
+	// 偽情報発信源
+	falseUsers []int,
+	// DP用
+	nick int,
+	capacity int,
+	// 制約関数依存
+	costFunc opt.CostFunc,
+) (float64, float64) {
+	r := rand.New(rand.NewSource(seed))
+	net := network.ReadEdgelist(graphPath)
+
+	// ここから共通処理
+	popList := make(diff.PopList, diff.Pops_n)
+	popList[diff.InfoType_F] = diff.PopHigh
+	popList[diff.InfoType_T] = diff.PopHigh
+
+	interestList := diff.MakeInterestList(net.N, r)
+	assumList := diff.MakeAssumList(net.N, r)
+	probTable := diff.GetUserProbTable()
+
+	falseSeedSet := UsersToSeedSet(falseUsers, net, diff.SeedInfoF)
+
+	trueUsers, _ := opt.DP(
+		sampleSize,
+		net,
+		falseSeedSet,
+		probTable,
+		popList,
+		interestList,
+		assumList,
+		true,
+		capacity,
+		true,
+		// mostFollowedUser,
+		// userWeight,
+		costFunc,
+		nick,
+		falseUsers,
+		r)
+
+	testTrueSeedSet := UsersToSeedSet(trueUsers, net, diff.SeedInfoT)
+	dist := opt.RunInflProp(
+		sampleSize, net, testTrueSeedSet, probTable, popList, interestList, assumList, r,
+	)
+	trueOnly := dist[diff.InfoType_T]
+
+	seedSet := make([]diff.SeedInfo, net.N)
+	copy(seedSet, falseSeedSet)
+	for _, user := range trueUsers {
+		seedSet[user] = diff.SeedInfoT
+	}
+	dist = opt.RunInflProp(
+		sampleSize, net, seedSet, probTable, popList, interestList, assumList, r,
+	)
+	trueWithFalse := dist[diff.InfoType_T]
+	return trueOnly, trueWithFalse
 }
