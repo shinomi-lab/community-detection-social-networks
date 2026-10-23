@@ -982,7 +982,7 @@ func main() {
 
 		use_user := false     //コスト：ユーザ
 		use_infl := true      //コスト：拡散量
-		use_kaiki := false    //コスト：予想拡散量　使ってない
+		use_kaiki := false    //コスト：予想拡散量　使ってないsu
 		use_follower := false //コスト：総フォロワー数　使ってない
 
 		S_f_type := 2 //1:単独　2:複数
