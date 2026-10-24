@@ -94,6 +94,7 @@ func initProbabilityTable() UserProbTable {
 	prob_0110 := prob[15]
 
 	var t UserProbTable
+
 	t[PopLow][InfoType_F][Interest_low][Assum_F] = prob_0000
 	t[PopLow][InfoType_F][Interest_low][Assum_T] = prob_0001
 	t[PopLow][InfoType_F][Interest_high][Assum_F] = prob_0010
