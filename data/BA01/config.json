@@ -4,16 +4,16 @@
     0,
     1
   ],
-  "cost_func": "follower",
+  "cost_func": "user",
   "sample_size": 100,
   "iterations": [
     {
       "seed": 42,
-      "capacity": 5
+      "capacity": 25
     },
     {
       "seed": 43,
-      "capacity": 10
+      "capacity": 50
     }
   ]
 }
