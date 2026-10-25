@@ -15,7 +15,7 @@ import (
 type EvalParameter struct {
 	GraphPath  string      `json:"graph_path"`
 	FalseUsers []int       `json:"false_users"`
-	CostFunc   string      `json:"cost_func"` // "follower" | "influence"
+	CostFunc   string      `json:"cost_func"` // "user" | "influence"
 	SampleSize int         `json:"sample_size"`
 	Iterations []iteration `json:"iterations"`
 }
@@ -85,8 +85,8 @@ func main() {
 	for _, iter := range param.Iterations {
 		var costFunc opt.CostFunc
 		switch param.CostFunc {
-		case "follower":
-			costFunc = opt.CostFollower{}
+		case "user":
+			costFunc = opt.CostUser{}
 		case "influence":
 			costFunc = opt.CostInfluence{}
 		default:
