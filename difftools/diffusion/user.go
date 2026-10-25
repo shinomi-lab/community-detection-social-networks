@@ -93,8 +93,30 @@ func initProbabilityTable() UserProbTable {
 	prob_0010 := prob[14]
 	prob_0110 := prob[15]
 
-	var t UserProbTable
-
+	//var t UserProbTable
+	t := UserProbTable{
+		PopLow: {
+			InfoType_F: {
+				Interest_low:  {Assum_F: prob_0000, Assum_T: prob_0001},
+				Interest_high: {Assum_F: prob_0010, Assum_T: prob_0011},
+			},
+			InfoType_T: {
+				Interest_low:  {Assum_F: prob_0100, Assum_T: prob_0101},
+				Interest_high: {Assum_F: prob_0110, Assum_T: prob_0111},
+			},
+		},
+		PopHigh: {
+			InfoType_F: {
+				Interest_low:  {Assum_F: prob_1000, Assum_T: prob_1001},
+				Interest_high: {Assum_F: prob_1010, Assum_T: prob_1011},
+			},
+			InfoType_T: {
+				Interest_low:  {Assum_F: prob_1100, Assum_T: prob_1101},
+				Interest_high: {Assum_F: prob_1110, Assum_T: prob_1111},
+			},
+		},
+	}
+	/*var a [2][2][2][2]float64
 	t[PopLow][InfoType_F][Interest_low][Assum_F] = prob_0000
 	t[PopLow][InfoType_F][Interest_low][Assum_T] = prob_0001
 	t[PopLow][InfoType_F][Interest_high][Assum_F] = prob_0010
@@ -111,6 +133,7 @@ func initProbabilityTable() UserProbTable {
 	t[PopHigh][InfoType_T][Interest_low][Assum_T] = prob_1101
 	t[PopHigh][InfoType_T][Interest_high][Assum_F] = prob_1110
 	t[PopHigh][InfoType_T][Interest_high][Assum_T] = prob_1111
+	*/
 
 	return t
 }
