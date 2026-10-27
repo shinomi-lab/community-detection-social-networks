@@ -13,7 +13,9 @@ import (
 )
 
 type EvalParameter struct {
-	GraphPath  string      `json:"graph_path"`
+	GraphPath string `json:"graph_path"`
+	//CommunityPath     string      `json:"community_path"`      // communities.txt (.gz) へのパス
+	//TargetCommunityID int         `json:"target_community_id"` // 対象コミュニティID
 	FalseUsers []int       `json:"false_users"`
 	CostFunc   string      `json:"cost_func"` // "user" | "influence"
 	SampleSize int         `json:"sample_size"`
@@ -56,7 +58,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	json.Unmarshal(paramFile, &param)
+	err = json.Unmarshal(paramFile, &param)
+
+	/*
+		if err != nil {
+			log.Fatal("JSON Unmarshal Error: ", err)
+		}
+
+		// コミュニティ属性ファイルから指定コミュニティに属するノードリストを取得
+		targetCommunityNodes, err := network.ReadCommunityNodes(param.CommunityPath, param.TargetCommunityID)
+		if err != nil {
+			log.Fatalf("コミュニティファイルの読み込みに失敗しました: %v", err)
+		}
+		log.Printf("コミュニティ %d の対象ノード数: %d 人\n", param.TargetCommunityID, len(targetCommunityNodes))
+	*/
 
 	// create csv file to output results
 	outputDir := os.Args[2]
@@ -103,6 +118,7 @@ func main() {
 			1,
 			iter.Capacity,
 			costFunc,
+			//targetCommunityNodes, // 抽出したコミュニティノードリストを渡す
 		)
 		row := []string{
 			strconv.FormatFloat(trueOnly, 'f', -1, 64),

@@ -562,6 +562,112 @@ func DP(
 	return dp[n][l_list-1].Users, dp[n][l_list-1].Infl
 }
 
+func CommunityDP(
+	sampleSize int,
+	net network.Network,
+	seedSet []diff.SeedInfo,
+	probTable diff.UserProbTable,
+	pop diff.PopList,
+	interestList diff.InterestList,
+	assumList diff.AssumList,
+	countTrue bool,
+	capacity int,
+	onlyInfler bool,
+	costFunc CostFunc,
+	nick int,
+	nonUseList []int,
+	targetCommunity []int, // ★ 修正箇所1：引数を追加
+	r *rand.Rand,
+) ([]int, float64) {
+	var info_num diff.SeedInfo = diff.BoolToSeed(countTrue)
+
+	// 制約関数の設定
+	var costInflFunc func(focusUser int) int
+
+	switch f := costFunc.(type) {
+	case CostDefault:
+		costInflFunc = func(focusUser int) int {
+			return int(Cal_cost(f.UserWeight, 1-f.UserWeight, net, focusUser, f.MaxUser))
+		}
+	case CostKaiki:
+		costInflFunc = func(focusUser int) int {
+			return Cal_cost_kaiki_int(f.UserWeight, 1-f.UserWeight, net, focusUser, f.MaxUser)
+		}
+	case CostUser:
+		costInflFunc = func(focusUser int) int {
+			return 1
+		}
+	case CostFollower:
+		costInflFunc = func(focusUser int) int {
+			return net.Followers[focusUser]
+		}
+	case CostInfluence:
+		costInflFunc = func(focusUser int) int {
+			return Cal_cost_infl_int(net, focusUser, probTable, pop, interestList, assumList)
+		}
+	}
+
+	S := make([]diff.SeedInfo, len(seedSet))
+	_ = copy(S, seedSet)
+
+	// ★ 修正箇所2：指定コミュニティ所属ノードのみを候補（onlyiflerlist）に設定
+	nonUseMap := make(map[int]bool, len(nonUseList))
+	for _, u := range nonUseList {
+		nonUseMap[u] = true
+	}
+
+	onlyiflerlist := make([]int, 0, len(targetCommunity))
+	for _, user := range targetCommunity {
+		if !nonUseMap[user] {
+			onlyiflerlist = append(onlyiflerlist, user)
+		}
+	}
+	onlyinfler_num := len(onlyiflerlist)
+
+	n := onlyinfler_num
+	l_list := capacity/nick + 1
+
+	dp := make([][]Users_infl, n+1)
+	for i := 0; i < n+1; i++ {
+		dp[i] = make([]Users_infl, l_list)
+	}
+
+	for w := range l_list {
+		dp[0][w].Infl = 0
+	}
+	for i := range n {
+		focusUser := onlyiflerlist[i]
+		cost_i_int := costInflFunc(focusUser)
+
+		for j := range l_list {
+			if j < cost_i_int/nick {
+				dp[i+1][j].Infl = dp[i][j].Infl
+				dp[i+1][j].CopyUsers(dp[i][j].Users)
+				continue
+			}
+			_ = copy(S, seedSet)
+			last_cost := j - cost_i_int/nick
+			for k := 0; k < len(dp[i][last_cost].Users); k++ {
+				S[dp[i][last_cost].Users[k]] = info_num
+			}
+			S[focusUser] = info_num
+
+			dist := RunInflProp(sampleSize, net, S, probTable, pop, interestList, assumList, r)
+			result := dist[diff.BoolToInfo(countTrue)]
+
+			if dp[i][j].Infl < result {
+				dp[i+1][j].Infl = roundTo(result, 4)
+				dp[i+1][j].CopyUsers(dp[i][last_cost].Users)
+				dp[i+1][j].AddUser(focusUser)
+			} else {
+				dp[i+1][j].Infl = dp[i][j].Infl
+				dp[i+1][j].CopyUsers(dp[i][j].Users)
+			}
+		}
+	}
+	return dp[n][l_list-1].Users, dp[n][l_list-1].Infl
+}
+
 // func PrintDp(dp [][]Users_infl) {
 // 	for i := 0; i < len(dp); i++ {
 // 		fmt.Println(dp[i])

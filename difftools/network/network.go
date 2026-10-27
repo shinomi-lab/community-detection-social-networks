@@ -5,8 +5,10 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -138,4 +140,68 @@ func ReadEdgelist(filePath string) Network {
 	default:
 		panic(fmt.Sprintf("Invalid type: %s", filePath))
 	}
+}
+
+type communityEntry struct {
+	node uint
+	comm uint
+}
+
+// parseCommunityJSON は JSON データのバイト配列をデコードし、
+// 「コミュニティID -> 所属ノードIDのリスト」のマップを生成して返します。
+func parseCommunityJSON(data []byte) map[int][]int {
+	// JSON構造: {"ノードID(文字列)": コミュニティID(数値)}
+	var rawMap map[string]int
+	if err := json.Unmarshal(data, &rawMap); err != nil {
+		panic(fmt.Sprintf("コミュニティJSONのパースに失敗しました: %v", err))
+	}
+
+	commMap := make(map[int][]int)
+	for nodeStr, commID := range rawMap {
+		nodeID, err := strconv.Atoi(nodeStr)
+		if err != nil {
+			continue
+		}
+		// communities.txt 内のノードIDはすでに 0 始まり（0-indexed）のため、そのまま追加します
+		commMap[commID] = append(commMap[commID], nodeID)
+	}
+
+	return commMap
+}
+
+// ReadCommunity はファイルパス（.txt または .gz）を受け取り、
+// コミュニティIDごとの所属ノードIDマップを返します。
+func ReadCommunity(filePath string) map[int][]int {
+	ext := strings.ToLower(filepath.Ext(filePath))
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	var reader io.Reader = f
+
+	// .gz ファイルの場合は gzip 解凍ストリームを適用
+	if ext == ".gz" {
+		gzReader, err := gzip.NewReader(f)
+		if err != nil {
+			panic(err)
+		}
+		defer gzReader.Close()
+		reader = gzReader
+	}
+
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		panic(err)
+	}
+
+	return parseCommunityJSON(data)
+}
+
+// ReadCommunityNodes は指定したコミュニティIDに所属するノードIDリストを直接取得する便利関数です。
+func ReadCommunityNodes(filePath string, targetCommID int) []int {
+	commMap := ReadCommunity(filePath)
+	return commMap[targetCommID]
 }
