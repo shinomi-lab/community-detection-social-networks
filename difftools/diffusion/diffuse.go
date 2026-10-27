@@ -57,7 +57,11 @@ func Diffuse(
 		// fmt.Println("recieved_list",recieved_list)
 		// 次のステップで情報を拡散するノードを格納する配列
 		next := make(map[InfoType][]int, InfoTypes_n)
-		for info, set := range current {
+		for _, info := range AllInfoTypes {
+			next[info] = make([]int, 0, net.N) // F用・T用の空スライスをあらかじめ準備
+		}
+		for _, info := range AllInfoTypes {
+			set := current[info]
 			for _, s_node := range set {
 				pop := popList[info]
 				// [todo] interest -> pop / assum -> info vs interest -> info / assum -> pop
@@ -90,7 +94,8 @@ func Diffuse(
 						// fmt.Println(s_node,"to",j,"\t",info, "complete",p,randp)
 						next[info] = append(next[info], j)
 						if info == InfoType_F && slices.Contains(next[InfoType_T], j) {
-							remove(next[InfoType_T], j)
+							//remove(next[InfoType_T], j)
+							next[InfoType_T] = remove(next[InfoType_T], j)
 						}
 					} else {
 						// fmt.Println(s_node,"to",j,"\t",info, "defete",p,randp)
@@ -99,14 +104,15 @@ func Diffuse(
 				}
 			}
 		}
-		// current = make([][]int, InfoTypes_n) //currentリセット
-		clear(current)
-		// _ = copy(current, next) //nextをcuurentに代入
-		current, next = next, current // 両者をスワップ
+		//current = make(map[InfoType][]int, InfoTypes_n) //currentリセット
+		//clear(current)
+		//_ = copy(current, next) //nextをcuurentに代入
+		//current, next = next, current // 両者をスワップ
 
 		for _, info := range AllInfoTypes {
 			receivedList[info] = funcs.UnionSets(receivedList[info], next[info])
 		}
+		current = next
 	}
 	// fmt.Println("recieved_list:",recieved_list)
 	return receivedList
