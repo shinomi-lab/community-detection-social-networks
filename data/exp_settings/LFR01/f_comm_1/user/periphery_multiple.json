@@ -1,5 +1,5 @@
 {
-  "graph_path": "data/LFR01/edgelist.txt.gz",
+  "graph_path": "../data/LFR01/edgelist.txt.gz",
   "false_users": [
     3715,
     4460,

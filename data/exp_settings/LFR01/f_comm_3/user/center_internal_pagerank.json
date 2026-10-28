@@ -1,0 +1,154 @@
+{
+  "graph_path": "../data/LFR01/edgelist.txt.gz",
+  "false_users": [
+    881
+  ],
+  "cost_func": "user",
+  "sample_size": 1000,
+  "iterations": [
+    {
+      "seed": 0,
+      "capacity": 1
+    },
+    {
+      "seed": 0,
+      "capacity": 2
+    },
+    {
+      "seed": 0,
+      "capacity": 3
+    },
+    {
+      "seed": 0,
+      "capacity": 4
+    },
+    {
+      "seed": 1,
+      "capacity": 1
+    },
+    {
+      "seed": 1,
+      "capacity": 2
+    },
+    {
+      "seed": 1,
+      "capacity": 3
+    },
+    {
+      "seed": 1,
+      "capacity": 4
+    },
+    {
+      "seed": 2,
+      "capacity": 1
+    },
+    {
+      "seed": 2,
+      "capacity": 2
+    },
+    {
+      "seed": 2,
+      "capacity": 3
+    },
+    {
+      "seed": 2,
+      "capacity": 4
+    },
+    {
+      "seed": 3,
+      "capacity": 1
+    },
+    {
+      "seed": 3,
+      "capacity": 2
+    },
+    {
+      "seed": 3,
+      "capacity": 3
+    },
+    {
+      "seed": 3,
+      "capacity": 4
+    },
+    {
+      "seed": 4,
+      "capacity": 1
+    },
+    {
+      "seed": 4,
+      "capacity": 2
+    },
+    {
+      "seed": 4,
+      "capacity": 3
+    },
+    {
+      "seed": 4,
+      "capacity": 4
+    },
+    {
+      "seed": 5,
+      "capacity": 1
+    },
+    {
+      "seed": 5,
+      "capacity": 2
+    },
+    {
+      "seed": 5,
+      "capacity": 3
+    },
+    {
+      "seed": 5,
+      "capacity": 4
+    },
+    {
+      "seed": 6,
+      "capacity": 1
+    },
+    {
+      "seed": 6,
+      "capacity": 2
+    },
+    {
+      "seed": 6,
+      "capacity": 3
+    },
+    {
+      "seed": 6,
+      "capacity": 4
+    },
+    {
+      "seed": 7,
+      "capacity": 1
+    },
+    {
+      "seed": 7,
+      "capacity": 2
+    },
+    {
+      "seed": 7,
+      "capacity": 3
+    },
+    {
+      "seed": 7,
+      "capacity": 4
+    },
+    {
+      "seed": 8,
+      "capacity": 1
+    },
+    {
+      "seed": 8,
+      "capacity": 2
+    },
+    {
+      "seed": 8,
+      "capacity": 3
+    },
+    {
+      "seed": 8,
+      "capacity": 4
+    }
+  ]
+}

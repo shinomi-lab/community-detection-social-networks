@@ -1,0 +1,154 @@
+{
+  "graph_path": "../data/LFR01/edgelist.txt.gz",
+  "false_users": [
+    106
+  ],
+  "cost_func": "influence",
+  "sample_size": 1000,
+  "iterations": [
+    {
+      "seed": 0,
+      "capacity": 20
+    },
+    {
+      "seed": 0,
+      "capacity": 40
+    },
+    {
+      "seed": 0,
+      "capacity": 60
+    },
+    {
+      "seed": 0,
+      "capacity": 80
+    },
+    {
+      "seed": 1,
+      "capacity": 20
+    },
+    {
+      "seed": 1,
+      "capacity": 40
+    },
+    {
+      "seed": 1,
+      "capacity": 60
+    },
+    {
+      "seed": 1,
+      "capacity": 80
+    },
+    {
+      "seed": 2,
+      "capacity": 20
+    },
+    {
+      "seed": 2,
+      "capacity": 40
+    },
+    {
+      "seed": 2,
+      "capacity": 60
+    },
+    {
+      "seed": 2,
+      "capacity": 80
+    },
+    {
+      "seed": 3,
+      "capacity": 20
+    },
+    {
+      "seed": 3,
+      "capacity": 40
+    },
+    {
+      "seed": 3,
+      "capacity": 60
+    },
+    {
+      "seed": 3,
+      "capacity": 80
+    },
+    {
+      "seed": 4,
+      "capacity": 20
+    },
+    {
+      "seed": 4,
+      "capacity": 40
+    },
+    {
+      "seed": 4,
+      "capacity": 60
+    },
+    {
+      "seed": 4,
+      "capacity": 80
+    },
+    {
+      "seed": 5,
+      "capacity": 20
+    },
+    {
+      "seed": 5,
+      "capacity": 40
+    },
+    {
+      "seed": 5,
+      "capacity": 60
+    },
+    {
+      "seed": 5,
+      "capacity": 80
+    },
+    {
+      "seed": 6,
+      "capacity": 20
+    },
+    {
+      "seed": 6,
+      "capacity": 40
+    },
+    {
+      "seed": 6,
+      "capacity": 60
+    },
+    {
+      "seed": 6,
+      "capacity": 80
+    },
+    {
+      "seed": 7,
+      "capacity": 20
+    },
+    {
+      "seed": 7,
+      "capacity": 40
+    },
+    {
+      "seed": 7,
+      "capacity": 60
+    },
+    {
+      "seed": 7,
+      "capacity": 80
+    },
+    {
+      "seed": 8,
+      "capacity": 20
+    },
+    {
+      "seed": 8,
+      "capacity": 40
+    },
+    {
+      "seed": 8,
+      "capacity": 60
+    },
+    {
+      "seed": 8,
+      "capacity": 80
+    }
+  ]
+}
