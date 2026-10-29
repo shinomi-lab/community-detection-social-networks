@@ -8,7 +8,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	strconv "strconv"
+	"sync"
 	"time"
 )
 
@@ -25,6 +27,11 @@ type EvalParameter struct {
 type iteration struct {
 	Seed     int64 `json:"seed"`
 	Capacity int   `json:"capacity"`
+}
+
+type result struct {
+	trueOnly      float64
+	trueWithFalse float64
 }
 
 // JSON Format Example:
@@ -97,38 +104,62 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, iter := range param.Iterations {
-		var costFunc opt.CostFunc
-		switch param.CostFunc {
-		case "user":
-			costFunc = opt.CostUser{}
-		case "influence":
-			costFunc = opt.CostInfluence{}
-		default:
-			log.Fatal("Unknown cost function: " + param.CostFunc)
-		}
-		trueOnly, trueWithFalse := exp.EvalInfmaxTF(
-			iter.Seed,
-			param.GraphPath,
-			// 影響関数計算用
-			param.SampleSize,
-			// 偽情報発信源
-			param.FalseUsers,
-			// DP用
-			1,
-			iter.Capacity,
-			costFunc,
-			//targetCommunityNodes, // 抽出したコミュニティノードリストを渡す
-		)
+	// job worker
+	numWorkers := runtime.NumCPU()
+	results := make(chan result, numWorkers)
+	var wg sync.WaitGroup
+
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, iter := range param.Iterations {
+				var costFunc opt.CostFunc
+				switch param.CostFunc {
+				case "user":
+					costFunc = opt.CostUser{}
+				case "influence":
+					costFunc = opt.CostInfluence{}
+				default:
+					log.Fatal("Unknown cost function: " + param.CostFunc)
+				}
+				trueOnly, trueWithFalse := exp.EvalInfmaxTF(
+					iter.Seed,
+					param.GraphPath,
+					// 影響関数計算用
+					param.SampleSize,
+					// 偽情報発信源
+					param.FalseUsers,
+					// DP用
+					1,
+					iter.Capacity,
+					costFunc,
+					//targetCommunityNodes, // 抽出したコミュニティノードリストを渡す
+				)
+				results <- result{
+					trueOnly:      trueOnly,
+					trueWithFalse: trueWithFalse,
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for result := range results {
 		row := []string{
-			strconv.FormatFloat(trueOnly, 'f', -1, 64),
-			strconv.FormatFloat(trueWithFalse, 'f', -1, 64),
+			strconv.FormatFloat(result.trueOnly, 'f', -1, 64),
+			strconv.FormatFloat(result.trueWithFalse, 'f', -1, 64),
 		}
 		err = writer.Write(row)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
+
 	logFile.WriteString("Input parameter file: " + configFilePath + "\n")
 	logFile.WriteString("Output results file: " + csvFilePath + "\n")
 }

@@ -217,11 +217,6 @@ dependencies = [
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "community-verification" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "ipykernel", specifier = ">=6.30.1" },
@@ -233,9 +228,6 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.5" },
     { name = "scipy", specifier = ">=1.15.3" },
 ]
-
-[package.metadata.requires-dev]
-dev = [{ name = "community-verification", virtual = "." }]
 
 [[package]]
 name = "contourpy"
