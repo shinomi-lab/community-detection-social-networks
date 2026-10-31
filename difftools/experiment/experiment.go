@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -742,19 +743,55 @@ func EvalInfmaxTF(
 		}
 	*/
 	testTrueSeedSet := UsersToSeedSet(trueUsers, net, diff.SeedInfoT)
-	dist := opt.RunInflProp(
-		sampleSize, net, testTrueSeedSet, probTable, popList, interestList, assumList, r,
-	)
-	trueOnly := dist[diff.InfoType_T]
-
 	seedSet := make([]diff.SeedInfo, net.N)
 	copy(seedSet, falseSeedSet)
 	for _, user := range trueUsers {
 		seedSet[user] = diff.SeedInfoT
 	}
-	dist = opt.RunInflProp(
-		sampleSize, net, seedSet, probTable, popList, interestList, assumList, r,
-	)
-	trueWithFalse := dist[diff.InfoType_T]
+	// 2. データレースを防ぐため、並列実行用に独立した乱数生成器を用意
+	r1 := rand.New(rand.NewSource(r.Int63()))
+	r2 := rand.New(rand.NewSource(r.Int63()))
+
+	// 3. Goroutine による同時並列処理
+	var trueOnly, trueWithFalse float64
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// ① 「真情報のみ」のシミュレーション
+	go func() {
+		defer wg.Done()
+		dist := opt.RunInflProp(
+			sampleSize, net, testTrueSeedSet, probTable, popList, interestList, assumList, r1,
+		)
+		trueOnly = dist[diff.InfoType_T]
+	}()
+
+	// ② 「偽情報あり」のシミュレーション
+	go func() {
+		defer wg.Done()
+		dist := opt.RunInflProp(
+			sampleSize, net, seedSet, probTable, popList, interestList, assumList, r2,
+		)
+		trueWithFalse = dist[diff.InfoType_T]
+	}()
+	// 両方の計算が終わるまで待機
+	wg.Wait()
+	/*
+		dist := opt.RunInflProp(
+			sampleSize, net, testTrueSeedSet, probTable, popList, interestList, assumList, r,
+		)
+		trueOnly := dist[diff.InfoType_T]
+
+		seedSet := make([]diff.SeedInfo, net.N)
+		copy(seedSet, falseSeedSet)
+		for _, user := range trueUsers {
+			seedSet[user] = diff.SeedInfoT
+		}
+		dist = opt.RunInflProp(
+			sampleSize, net, seedSet, probTable, popList, interestList, assumList, r,
+		)
+
+		trueWithFalse := dist[diff.InfoType_T]
+	*/
 	return trueOnly, trueWithFalse
 }
