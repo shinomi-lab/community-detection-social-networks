@@ -180,16 +180,18 @@ func main() {
 	*/
 
 	// job worker
-	numWorkers := runtime.NumCPU()
+	//numWorkers := runtime.NumCPU()
 	numJobs := len(allJobs)
 	jobs := make(chan job, numJobs)
-	results := make(chan indexedResult, numWorkers)
+	results := make(chan indexedResult, numJobs)
 	for _, j := range allJobs {
 		jobs <- j
 	}
 	close(jobs) // 投入完了後にクローズ
 
+	numWorkers := runtime.NumCPU()
 	var wg sync.WaitGroup
+
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func() {
