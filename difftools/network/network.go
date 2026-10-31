@@ -142,10 +142,10 @@ func ReadEdgelist(filePath string) Network {
 	}
 }
 
-// type communityEntry struct {
-// 	node uint
-// 	comm uint
-// }
+type communityEntry struct {
+	node uint
+	comm uint
+}
 
 // parseCommunityJSON は JSON データのバイト配列をデコードし、
 // 「コミュニティID -> 所属ノードIDのリスト」のマップを生成して返します。

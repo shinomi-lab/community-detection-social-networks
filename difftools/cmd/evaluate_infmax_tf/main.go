@@ -2,6 +2,7 @@ package main
 
 import (
 	exp "difftools/experiment"
+	"difftools/network"
 	opt "difftools/optimization"
 	"encoding/csv"
 	"encoding/json"
@@ -17,13 +18,13 @@ import (
 )
 
 type EvalParameter struct {
-	GraphPath string `json:"graph_path"`
-	//CommunityPath     string      `json:"community_path"`      // communities.txt (.gz) へのパス
-	//TargetCommunityID int         `json:"target_community_id"` // 対象コミュニティID
-	FalseUsers []int       `json:"false_users"`
-	CostFunc   string      `json:"cost_func"` // "user" | "influence"
-	SampleSize int         `json:"sample_size"`
-	Iterations []iteration `json:"iterations"`
+	GraphPath         string      `json:"graph_path"`
+	CommunityPath     string      `json:"community_path"`      // communities.txt (.gz) へのパス
+	TargetCommunityID int         `json:"target_community_id"` // 対象コミュニティID
+	FalseUsers        []int       `json:"false_users"`
+	CostFunc          string      `json:"cost_func"` // "user" | "influence"
+	SampleSize        int         `json:"sample_size"`
+	Iterations        []iteration `json:"iterations"`
 }
 
 type iteration struct {
@@ -38,10 +39,11 @@ type result struct {
 
 // どのJSONの、どのIterationかを特定するためのジョブ構造体
 type job struct {
-	jsonIndex int
-	iterIndex int
-	param     EvalParameter
-	iter      iteration
+	jsonIndex       int
+	iterIndex       int
+	param           EvalParameter
+	iter            iteration
+	targetCommunity []int // 【追加】抽出した対象コミュニティのノードIDリスト
 }
 
 // ワーカーからの計算結果
@@ -119,14 +121,19 @@ func main() {
 			log.Fatalf("JSON Unmarshal エラー (%s): %v", jsonPath, err)
 		}
 
+		// ★ コミュニティファイルから対象コミュニティIDのノードIDリストを取得
+		targetCommunityNodes := network.ReadCommunityNodes(param.CommunityPath, param.TargetCommunityID)
+		log.Printf("[%s] コミュニティ %d の対象ノード数: %d 人\n", filepath.Base(jsonPath), param.TargetCommunityID, len(targetCommunityNodes))
+
 		jsonIterCounts[jsonIdx] = len(param.Iterations)
 
 		for iterIdx, iter := range param.Iterations {
 			allJobs = append(allJobs, job{
-				jsonIndex: jsonIdx,
-				iterIndex: iterIdx,
-				param:     param,
-				iter:      iter,
+				jsonIndex:       jsonIdx,
+				iterIndex:       iterIdx,
+				param:           param,
+				iter:            iter,
+				targetCommunity: targetCommunityNodes,
 			})
 		}
 	}
@@ -139,7 +146,6 @@ func main() {
 		}
 		err = json.Unmarshal(paramFile, &param)
 	*/
-
 	/*
 		if err != nil {
 			log.Fatal("JSON Unmarshal Error: ", err)
@@ -152,7 +158,6 @@ func main() {
 		}
 		log.Printf("コミュニティ %d の対象ノード数: %d 人\n", param.TargetCommunityID, len(targetCommunityNodes))
 	*/
-
 	/*
 		// create csv file to output results
 		outputDir := os.Args[2]
@@ -215,6 +220,7 @@ func main() {
 					1,
 					j.iter.Capacity,
 					costFunc,
+					j.targetCommunity,
 				)
 
 				results <- indexedResult{

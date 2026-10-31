@@ -610,10 +610,16 @@ func CommunityDP(
 	S := make([]diff.SeedInfo, len(seedSet))
 	_ = copy(S, seedSet)
 
-	// ★ 修正箇所2：指定コミュニティ所属ノードのみを候補（onlyiflerlist）に設定
+	// 除外リスト（偽情報発信源など）のマップ作成
 	nonUseMap := make(map[int]bool, len(nonUseList))
 	for _, u := range nonUseList {
 		nonUseMap[u] = true
+	}
+
+	// コミュニティ所属チェック用マップを作成（検証用）
+	commMap := make(map[int]bool, len(targetCommunity))
+	for _, user := range targetCommunity {
+		commMap[user] = true
 	}
 
 	onlyiflerlist := make([]int, 0, len(targetCommunity))
@@ -665,7 +671,18 @@ func CommunityDP(
 			}
 		}
 	}
-	return dp[n][l_list-1].Users, dp[n][l_list-1].Infl
+
+	selectedUsers := dp[n][l_list-1].Users
+	selectedInfl := dp[n][l_list-1].Infl
+
+	// 検証: 選出されたノードが指定コミュニティ内に存在するかチェック（不一致時のみ panic）
+	for _, user := range selectedUsers {
+		if !commMap[user] {
+			panic(fmt.Sprintf("エラー: DPで選出されたノード %d は指定コミュニティ内に存在しません！", user))
+		}
+	}
+
+	return selectedUsers, selectedInfl
 }
 
 // func PrintDp(dp [][]Users_infl) {

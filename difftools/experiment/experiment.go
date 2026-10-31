@@ -693,6 +693,8 @@ func EvalInfmaxTF(
 	capacity int,
 	// 制約関数依存
 	costFunc opt.CostFunc,
+	// 【追加】選出対象とするコミュニティのノードIDリスト
+	targetCommunity []int,
 ) (float64, float64) {
 	r := rand.New(rand.NewSource(seed))
 	net := network.ReadEdgelist(graphPath)
@@ -709,7 +711,7 @@ func EvalInfmaxTF(
 	falseSeedSet := UsersToSeedSet(falseUsers, net, diff.SeedInfoF)
 
 	//communityDPだと、真情報の発信源を指定のコミュニティ内で選んで範囲を指定できる
-	trueUsers, _ := opt.DP(
+	trueUsers, _ := opt.CommunityDP(
 		sampleSize,
 		net,
 		falseSeedSet,
@@ -725,22 +727,10 @@ func EvalInfmaxTF(
 		costFunc,
 		nick,
 		falseUsers,
-		// targetcommunity,
+		targetCommunity,
 		r,
 	)
 
-	// ★【追加】コミュニティ所属のチェック処理（正しければ何も出ずスルー、不一致時のみpanic）
-	/*
-		commMap := make(map[int]bool, len(targetCommunity))
-		for _, node := range targetCommunity {
-			commMap[node] = true
-		}
-		for _, user := range trueUsers {
-			if !commMap[user] {
-				panic(fmt.Sprintf("エラー: 選出されたノード %d は指定コミュニティに存在しません！", user))
-			}
-		}
-	*/
 	testTrueSeedSet := UsersToSeedSet(trueUsers, net, diff.SeedInfoT)
 	// ① 「真情報のみ」の計算（順次実行）
 	dist1 := opt.RunInflProp(
