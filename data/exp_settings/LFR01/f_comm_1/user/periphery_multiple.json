@@ -1,5 +1,7 @@
 {
   "graph_path": "../data/LFR01/edgelist.txt.gz",
+  "community_path": "../data/LFR01/communities.txt.gz",
+  "target_community_id": 2,
   "false_users": [
     3715,
     4460,
