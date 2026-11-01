@@ -1,5 +1,7 @@
 {
   "graph_path": "../data/LFR01/edgelist.txt.gz",
+  "community_path": "../data/LFR01/communities.txt.gz",
+  "target_community_id": 2,
   "false_users": [
     322,
     2087,
@@ -8,7 +10,7 @@
     2723
   ],
   "cost_func": "influence",
-  "sample_size": 1000,
+  "sample_size": 500,
   "iterations": [
     {
       "seed": 0,
