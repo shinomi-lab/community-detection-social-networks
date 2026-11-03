@@ -10,7 +10,7 @@
     2723
   ],
   "cost_func": "user",
-  "sample_size": 500,
+  "sample_size": 300,
   "iterations": [
     {
       "seed": 0,

@@ -6,7 +6,7 @@
     2915
   ],
   "cost_func": "influence",
-  "sample_size": 500,
+  "sample_size": 300,
   "iterations": [
     {
       "seed": 0,
