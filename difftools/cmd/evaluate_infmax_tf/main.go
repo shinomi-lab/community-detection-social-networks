@@ -33,8 +33,8 @@ type iteration struct {
 }
 
 type result struct {
-	trueOnly      float64
-	trueWithFalse float64
+	compWithFalse  float64
+	indepWithFalse float64
 }
 
 // どのJSONの、どのIterationかを特定するためのジョブ構造体
@@ -212,7 +212,7 @@ func main() {
 					log.Fatalf("Unknown cost function: %s (JSON: %s)", j.param.CostFunc, jsonFiles[j.jsonIndex])
 				}
 
-				trueOnly, trueWithFalse := exp.EvalInfmaxTF(
+				compWithFalse, indepWithFalse := exp.EvalInfmaxTF(
 					j.iter.Seed,
 					j.param.GraphPath,
 					j.param.SampleSize,
@@ -227,8 +227,8 @@ func main() {
 					jsonIndex: j.jsonIndex,
 					iterIndex: j.iterIndex,
 					res: result{
-						trueOnly:      trueOnly,
-						trueWithFalse: trueWithFalse,
+						compWithFalse:  compWithFalse,
+						indepWithFalse: indepWithFalse,
 					},
 				}
 			}
@@ -312,8 +312,8 @@ func main() {
 		for iterIdx := 0; iterIdx < iterCount; iterIdx++ {
 			res := finalResults[jsonIdx][iterIdx]
 			row := []string{
-				strconv.FormatFloat(res.trueOnly, 'f', -1, 64),
-				strconv.FormatFloat(res.trueWithFalse, 'f', -1, 64),
+				strconv.FormatFloat(res.compWithFalse, 'f', -1, 64),
+				strconv.FormatFloat(res.indepWithFalse, 'f', -1, 64),
 			}
 			if err := writer.Write(row); err != nil {
 				log.Fatalf("CSVデータ書き込みエラー: %v", err)

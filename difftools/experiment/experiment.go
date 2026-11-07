@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -27,12 +28,23 @@ func FindMostFollowedUser(net network.Network) int {
 
 func UsersToSeedSet(users []int, net network.Network, info diff.SeedInfo) []diff.SeedInfo {
 	seedSet := make([]diff.SeedInfo, net.N)
+	for _, u := range users {
+		if u >= 0 && u < net.N {
+			seedSet[u] = info
+		}
+	}
+	return seedSet
+}
+
+/*
+func UsersToSeedSet(users []int, net network.Network, info diff.SeedInfo) []diff.SeedInfo {
+	seedSet := make([]diff.SeedInfo, net.N)
 	for _, i := range users {
 		seedSet[i] = info
 	}
 	return seedSet
 }
-
+*/
 // 複数ユーザの場合
 //
 // フォロワー数が、nFollowersFrom ~ nFollowersTo の範囲のノードから、k個飛ばしで選択する
@@ -709,46 +721,97 @@ func EvalInfmaxTF(
 	probTable := diff.GetUserProbTable()
 
 	falseSeedSet := UsersToSeedSet(falseUsers, net, diff.SeedInfoF)
+	emptyFalseSeedSet := make([]diff.SeedInfo, net.N) // 単一情報用（偽情報なし）
 
-	//communityDPだと、真情報の発信源を指定のコミュニティ内で選んで範囲を指定できる
-	trueUsers, _ := opt.CommunityDP(
-		sampleSize,
-		net,
-		falseSeedSet,
-		probTable,
-		popList,
-		interestList,
-		assumList,
-		true,
-		capacity,
-		true,
-		// mostFollowedUser,
-		// userWeight,
-		costFunc,
-		nick,
-		falseUsers,
-		targetCommunity,
-		r,
+	// 1. 【競合あり DP】 指定コミュニティ内から偽情報を考慮した解 S_comp を選定
+	trueUsersComp, _ := opt.CommunityDP(
+		sampleSize, net, falseSeedSet, probTable, popList, interestList, assumList,
+		true, capacity, true, costFunc, nick, falseUsers, targetCommunity, r,
 	)
 
-	testTrueSeedSet := UsersToSeedSet(trueUsers, net, diff.SeedInfoT)
-	// ① 「真情報のみ」の計算（順次実行）
-	dist1 := opt.RunInflProp(
-		sampleSize, net, testTrueSeedSet, probTable, popList, interestList, assumList, r,
+	// 2. 【単一情報 DP】 指定コミュニティ内から偽情報を無視した解 S_indep を選定
+	trueUsersIndep, _ := opt.CommunityDP(
+		sampleSize, net, emptyFalseSeedSet, probTable, popList, interestList, assumList,
+		true, capacity, true, costFunc, nick, falseUsers, targetCommunity, r,
 	)
-	trueOnly := dist1[diff.InfoType_T]
 
-	seedSet := make([]diff.SeedInfo, net.N)
-	copy(seedSet, falseSeedSet)
-	for _, user := range trueUsers {
-		seedSet[user] = diff.SeedInfoT
+	// 3. 両方の解を「偽情報アリの環境」で評価するためのシードセット生成
+	seedSetComp := make([]diff.SeedInfo, net.N)
+	copy(seedSetComp, falseSeedSet)
+	for _, user := range trueUsersComp {
+		seedSetComp[user] = diff.SeedInfoT
 	}
 
-	// ② 「偽情報あり」の計算（順次実行）
-	dist2 := opt.RunInflProp(
-		sampleSize, net, seedSet, probTable, popList, interestList, assumList, r,
-	)
-	trueWithFalse := dist2[diff.InfoType_T]
+	seedSetIndep := make([]diff.SeedInfo, net.N)
+	copy(seedSetIndep, falseSeedSet)
+	for _, user := range trueUsersIndep {
+		seedSetIndep[user] = diff.SeedInfoT
+	}
 
-	return trueOnly, trueWithFalse
+	// 4. 並列で拡散シミュレーション（偽情報あり環境）
+	r1 := rand.New(rand.NewSource(r.Int63()))
+	r2 := rand.New(rand.NewSource(r.Int63()))
+
+	var comp_with_false, indep_with_false float64
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// ① 虚偽情報アリの解 (S_comp) の到達数
+	go func() {
+		defer wg.Done()
+		dist := opt.RunInflProp(sampleSize, net, seedSetComp, probTable, popList, interestList, assumList, r1)
+		comp_with_false = dist[diff.InfoType_T]
+	}()
+
+	// ② 虚偽情報なしの解をアリに使ってみた解 (S_indep) の到達数
+	go func() {
+		defer wg.Done()
+		dist := opt.RunInflProp(sampleSize, net, seedSetIndep, probTable, popList, interestList, assumList, r2)
+		indep_with_false = dist[diff.InfoType_T]
+	}()
+
+	wg.Wait()
+
+	/*
+		//communityDPだと、真情報の発信源を指定のコミュニティ内で選んで範囲を指定できる
+		trueUsers, _ := opt.CommunityDP(
+			sampleSize,
+			net,
+			falseSeedSet,
+			probTable,
+			popList,
+			interestList,
+			assumList,
+			true,
+			capacity,
+			true,
+			// mostFollowedUser,
+			// userWeight,
+			costFunc,
+			nick,
+			falseUsers,
+			targetCommunity,
+			r,
+		)
+
+		testTrueSeedSet := UsersToSeedSet(trueUsers, net, diff.SeedInfoT)
+		// ① 「真情報のみ」の計算（順次実行）
+		dist1 := opt.RunInflProp(
+			sampleSize, net, testTrueSeedSet, probTable, popList, interestList, assumList, r,
+		)
+		trueOnly := dist1[diff.InfoType_T]
+
+		seedSet := make([]diff.SeedInfo, net.N)
+		copy(seedSet, falseSeedSet)
+		for _, user := range trueUsers {
+			seedSet[user] = diff.SeedInfoT
+		}
+
+		// ② 「偽情報あり」の計算（順次実行）
+		dist2 := opt.RunInflProp(
+			sampleSize, net, seedSet, probTable, popList, interestList, assumList, r,
+		)
+		trueWithFalse := dist2[diff.InfoType_T]
+	*/
+	return comp_with_false, indep_with_false //trueOnly, trueWithFalse
 }
