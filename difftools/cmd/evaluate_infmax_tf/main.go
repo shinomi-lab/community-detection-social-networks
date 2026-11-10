@@ -302,7 +302,7 @@ func main() {
 		}
 		writer := csv.NewWriter(csvFile)
 
-		header := []string{"true_only", "true_with_false"}
+		header := []string{"comp_with_false", "indep_with_false"}
 		if err := writer.Write(header); err != nil {
 			log.Fatalf("CSVヘッダー書き込みエラー: %v", err)
 		}
