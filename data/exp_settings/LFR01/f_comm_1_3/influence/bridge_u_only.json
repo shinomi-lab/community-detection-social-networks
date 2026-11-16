@@ -1,0 +1,158 @@
+{
+  "graph_path": "../data/LFR01/edgelist.txt.gz",
+  "community_path": "../data/LFR01/communities.txt.gz",
+  "target_community_id": 2,
+  "false_users": [
+    4539,
+    2898,
+    4590
+  ],
+  "cost_func": "influence",
+  "sample_size": 300,
+  "iterations": [
+    {
+      "seed": 0,
+      "capacity": 50
+    },
+    {
+      "seed": 0,
+      "capacity": 100
+    },
+    {
+      "seed": 0,
+      "capacity": 150
+    },
+    {
+      "seed": 0,
+      "capacity": 200
+    },
+    {
+      "seed": 1,
+      "capacity": 50
+    },
+    {
+      "seed": 1,
+      "capacity": 100
+    },
+    {
+      "seed": 1,
+      "capacity": 150
+    },
+    {
+      "seed": 1,
+      "capacity": 200
+    },
+    {
+      "seed": 2,
+      "capacity": 50
+    },
+    {
+      "seed": 2,
+      "capacity": 100
+    },
+    {
+      "seed": 2,
+      "capacity": 150
+    },
+    {
+      "seed": 2,
+      "capacity": 200
+    },
+    {
+      "seed": 3,
+      "capacity": 50
+    },
+    {
+      "seed": 3,
+      "capacity": 100
+    },
+    {
+      "seed": 3,
+      "capacity": 150
+    },
+    {
+      "seed": 3,
+      "capacity": 200
+    },
+    {
+      "seed": 4,
+      "capacity": 50
+    },
+    {
+      "seed": 4,
+      "capacity": 100
+    },
+    {
+      "seed": 4,
+      "capacity": 150
+    },
+    {
+      "seed": 4,
+      "capacity": 200
+    },
+    {
+      "seed": 5,
+      "capacity": 50
+    },
+    {
+      "seed": 5,
+      "capacity": 100
+    },
+    {
+      "seed": 5,
+      "capacity": 150
+    },
+    {
+      "seed": 5,
+      "capacity": 200
+    },
+    {
+      "seed": 6,
+      "capacity": 50
+    },
+    {
+      "seed": 6,
+      "capacity": 100
+    },
+    {
+      "seed": 6,
+      "capacity": 150
+    },
+    {
+      "seed": 6,
+      "capacity": 200
+    },
+    {
+      "seed": 7,
+      "capacity": 50
+    },
+    {
+      "seed": 7,
+      "capacity": 100
+    },
+    {
+      "seed": 7,
+      "capacity": 150
+    },
+    {
+      "seed": 7,
+      "capacity": 200
+    },
+    {
+      "seed": 8,
+      "capacity": 50
+    },
+    {
+      "seed": 8,
+      "capacity": 100
+    },
+    {
+      "seed": 8,
+      "capacity": 150
+    },
+    {
+      "seed": 8,
+      "capacity": 200
+    }
+  ]
+}
